@@ -1,0 +1,10 @@
+^C:\USERS\ADAMG\3D OBJECTS\5. ATELIER ECOLE\IQRA\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SC:/Users/adamg/3D Objects/5. Atelier Ecole/IQRA" "-BC:/Users/adamg/3D Objects/5. Atelier Ecole/IQRA/test_build" --check-stamp-file "C:/Users/adamg/3D Objects/5. Atelier Ecole/IQRA/test_build/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
