@@ -1,131 +1,131 @@
-# Simulation d'Analyse d'Œuvres d'Art par Faisceau d'Électrons
+# Art Analysis Simulation (Geant4)
 
-## Objectif
+Simulation Geant4 d'une tomographie non invasive par électrons relativistes, orientée BL4S:
+- mesure de l'angle de diffusion multiple (trackers amont/aval),
+- mesure de perte d'énergie (calorimètres),
+- estimation physique de `x/X0`, `x`, `X0`, transmission et `mu`,
+- reconstruction multi-angle.
 
-Développer une simulation Geant4 pour analyser des œuvres d'art de manière non invasive en utilisant un faisceau d'électrons.
+## 1. Ce que fait le projet
 
-## Principe de l'expérience
+Le setup simulé est:
+`TriggerScintillator -> TrackerUp1/Up2 -> objet multicouche -> TrackerDown1/Down2 -> CalorimeterIn/Out`
 
-### Méthodologie
-1. **Faisceau d'électrons** : Un faisceau collimaté d'électrons de 1-5 MeV
-2. **Cible** : Œuvre d'art avec différentes couches de peinture
-3. **Détection** : 
-   - **Trackers** : Mesure de la déviation des électrons
-   - **Calorimètres** : Mesure de l'énergie avant et après passage
+L'objet contient des couches type peinture/restauration:
+`Varnish, ModernPaint, Vermilion, LapisLazuli, LeadWhite, Malachite, LeadTinYellow, Gesso, Canvas`.
 
-### Applications attendues
+Le faisceau primaire est un faisceau d'électrons (`e-`) avec énergie configurable (2 GeV dans les macros BL4S).
 
-#### 1. **Identification des pigments**
-- **Peintures anciennes** : Pigments à base de plomb (forte déviation)
-- **Peintures modernes** : Pigments organiques (faible déviation)
-- **Analyse quantitative** : Cartographie de la composition
+## 2. Prérequis
 
-#### 2. **Mesure d'épaisseur des couches**
-- **Principe** : Différence d'énergie ΔE = E_entrée - E_sortie
-- **Précision** : Résolution sub-micrométrique possible
-- **Profondeur** : Analyse couche par couche
+- CMake >= 3.12
+- Compilateur C++17
+- Geant4 installé et détectable par CMake (`find_package(Geant4 REQUIRED)`)
+- Dataset Geant4 `G4ENSDFSTATEDATA` correctement configuré
 
-#### 3. **Avantages de la méthode**
-- **Non invasive** : Pas de prélèvement
-- **Haute précision** : Résolution spatiale < 100 μm
-- **Analyse 3D** : Profilage en profondeur
-- **Multi-éléments** : Détection de Z élevés (plomb, mercure, etc.)
+Au runtime, si `G4ENSDFSTATEDATA/ENSDFSTATE.dat` est absent, l'exécutable s'arrête avec code `2`.
 
-## Configuration de la simulation
+## 3. Build
 
-### Paramètres du faisceau
-- Énergie : 1-5 MeV (ajustable)
-- Diamètre : 100 μm - 1 mm
-- Intensité : 10^6 - 10^9 électrons/s
-- Collimation : < 1 mrad
+Depuis `Art_Analysis_Simulation`:
 
-### Géométrie de détection
-```
-      Source d'électrons
-             ↓
-    ┌─────────────────┐
-    │  Tracker 1     │ ← Position initiale
-    │  (précision μm)│
-    └─────────────────┘
-             ↓
-    ┌─────────────────┐
-    │ Calorimètre 1   │ ← Énergie d'entrée
-    │  (E_entrée)    │
-    └─────────────────┘
-             ↓
-    ┌─────────────────┐
-    │   Œuvre d'art  │ ← Cible analysée
-    │  (couches)     │
-    └─────────────────┘
-             ↓
-    ┌─────────────────┐
-    │ Calorimètre 2   │ ← Énergie de sortie
-    │  (E_sortie)    │
-    └─────────────────┘
-             ↓
-    ┌─────────────────┐
-    │  Tracker 2     │ ← Position finale
-    │  (précision μm)│
-    └─────────────────┘
+```powershell
+cmake -S . -B build_simple
+cmake --build build_simple --config Release --target ArtAnalysisSimulation
 ```
 
-### Matériaux à simuler
-- **Support** : Toile, bois, mur
-- **Préparation** : Gesso, enduit
-- **Peintures anciennes** :
-  - Blanc de plomb (2PbCO₃·Pb(OH)₂)
-  - Vermillon (HgS)
-  - Minium (Pb₃O₄)
-- **Peintures modernes** :
-  - Dioxyde de titane (TiO₂)
-  - Pigments organiques
-- **Vernis** : Résines naturelles/synthétiques
+## 4. Exécution
 
-## Résultats attendus
+## Mode interactif
 
-### 1. **Déviation angulaire**
-- **Forte déviation** : Z élevé (plomb, mercure)
-- **Faible déviation** : Z faible (carbone, hydrogène)
-- **Cartographie** : Distribution spatiale des pigments
+```powershell
+.\build_simple\Release\ArtAnalysisSimulation.exe
+```
 
-### 2. **Perte d'énergie**
-- **Relation** : dE/dx ∝ Z²
-- **Épaisseur** : ΔE = ∫(dE/dx)dx
-- **Résolution** : ~1 μm pour couches de peinture
+## Mode batch (macro)
 
-### 3. **Analyse 3D**
-- **Profondeur** : Balayage en énergie
-- **Résolution latérale** : Taille du faisceau
-- **Volume analysé** : 100×100×500 μm³
+```powershell
+.\build_simple\Release\ArtAnalysisSimulation.exe .\bl4s_ready.mac
+```
 
-## Applications pratiques
+## Mode visualisation + shell interactif après macro
 
-### 1. **Authentification d'œuvres**
-- Détection de pigments anachroniques
-- Analyse des techniques de peinture
-- Comparaison avec bases de données
+```powershell
+.\build_simple\Release\ArtAnalysisSimulation.exe --vis .\advanced_visualization.mac
+```
 
-### 2. **Conservation**
-- Suivi de l'état de dégradation
-- Détection de restaurations anciennes
-- Planification des traitements
+## 5. Macros utiles
 
-### 3. **Recherche**
-- Étude des techniques anciennes
-- Analyse des mélanges de pigments
-- Cartographie des altérations
+- `bl4s_ready.mac`: acquisition BL4S de base + export CSV.
+- `bl4s_multiangle.mac`: acquisitions multi-angles pour reconstruction.
+- `animation_particles.mac`: visualisation trajectoires simple/stable.
+- `advanced_visualization.mac`: visualisation avancée alignée avec la géométrie actuelle.
 
-## Implémentation Geant4
+## 6. Sorties d'analyse
 
-### Structure du code
-- `ArtDetectorConstruction.cc` : Géométrie de l'expérience
-- `ArtPhysicsList.cc` : Processus physiques adaptés
-- `ArtPrimaryGeneratorAction.cc` : Génération du faisceau
-- `ArtTrackingAction.cc` : Analyse des trajectoires
-- `ArtEventAction.cc` : Collecte des données
+La commande `/art/save <file>.csv` exporte:
+- observables événement (`theta`, `deltaE`, directions, intersection objet),
+- estimations physiques ajoutées:
+  - `x_over_X0_est`
+  - `thickness_est_mm`
+  - `X0_est_mm`
+  - `dedx_est_MeV_per_mm`
+  - `mu_est_per_mm`
+  - `transmission_est`
+  - `inferred_material`
+- résumé par cellule de grille (`mean_theta`, `mean_deltaE`, `mean_thickness`, `transmission`, `mu`).
 
-### Données de sortie
-- Trajectoires des électrons
-- Énergies déposées par couche
-- Déviations angulaires
-- Cartes 2D/3D de composition
+## 7. Reconstruction multi-angle
+
+Script:
+[reconstruct_multiangle.py](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/reconstruct_multiangle.py)
+
+Exemple:
+
+```powershell
+python .\reconstruct_multiangle.py --input .\bl4s_multiangle_results.csv --outdir .\reconstruction_output
+```
+
+Sorties:
+- `reco_areal_map.png`
+- `reco_depth_mip.png`
+- `reco_diagnostics.png`
+- `reco_volume.npy` (+ cartes dérivées)
+- `reco_summary.txt`
+
+## 8. Tests
+
+Test rapide compilé dans le CMake principal:
+
+```powershell
+cmake --build build_simple --config Release --target bfs_ready_tests
+.\build_simple\Release\bfs_ready_tests.exe
+```
+
+Pour la suite de tests étendue (unit/integration/perf/physics/regression), voir:
+[README_TESTS.md](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/README_TESTS.md)
+
+## 9. Dépannage rapide
+
+## Erreur dataset Geant4
+
+Symptôme:
+`Missing Geant4 dataset: G4ENSDFSTATEDATA/ENSDFSTATE.dat`
+
+Action:
+- charger votre environnement Geant4,
+- vérifier que la variable `G4ENSDFSTATEDATA` pointe vers un dossier contenant `ENSDFSTATE.dat`.
+
+## Aucune fenêtre de visualisation
+
+- lancer avec `--vis <macro>` ou en mode interactif,
+- vérifier OpenGL/driver,
+- essayer `animation_particles.mac` avant `advanced_visualization.mac`.
+
+## 10. Fichiers principaux
+
+- [ArtAnalysisSimulation.cc](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/ArtAnalysisSimulation.cc): entrée programme, parsing args, mode batch/vis.
+- [ArtDetectorConstruction.cc](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/ArtDetectorConstruction.cc): géométrie monde + objet + détecteurs.
+- [ArtEventAction.cc](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/ArtEventAction.cc): construction observables événement.
+- [ArtAnalysisManager.cc](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/ArtAnalysisManager.cc): inférence physique + export.
+- [ArtUICommands.cc](/c:/Users/adamg/3D%20Objects/5.%20Atelier%20Ecole/IQRA/Art_Analysis_Simulation/ArtUICommands.cc): commandes `/art/*`.
