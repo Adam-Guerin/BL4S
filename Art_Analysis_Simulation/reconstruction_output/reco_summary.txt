@@ -1,0 +1,5 @@
+nx=48, ny=48, nz=20
+iterations=40, relaxation=0.2
+weight_theta=0.7, weight_energy=0.3
+rms_residual=0.266945
+corr_obs_pred=0.057809

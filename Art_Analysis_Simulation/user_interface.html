@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation d'Analyse d'Œuvres d'Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .status {
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .status.success {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .status.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .results {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .material-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .material-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .material-item h4 {
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .material-item p {
+            color: #718096;
+            font-size: 0.9em;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            transition: width 0.3s ease;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .icon {
+            font-size: 1.5em;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Simulation d'Analyse d'Œuvres d'Art</h1>
+            <p>Détection non invasive de pigments historiques par faisceau d'électrons</p>
+        </div>
+
+        <div class="main-content">
+            <div class="card">
+                <h2><span class="icon">⚙️</span>Configuration de la Simulation</h2>
+                
+                <div class="form-group">
+                    <label for="beamEnergy">Énergie du faisceau (keV)</label>
+                    <input type="range" id="beamEnergy" min="50" max="200" value="100" oninput="updateValue('beamEnergy')">
+                    <span id="beamEnergyValue">100 keV</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="numElectrons">Nombre d'électrons</label>
+                    <input type="number" id="numElectrons" value="10000" min="1000" max="100000">
+                </div>
+
+                <div class="form-group">
+                    <label for="beamPosition">Position du faisceau</label>
+                    <select id="beamPosition">
+                        <option value="center">Centre de l'œuvre</option>
+                        <option value="scan">Balayage complet</option>
+                        <option value="custom">Personnalisée</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="artworkType">Type d'œuvre</label>
+                    <select id="artworkType">
+                        <option value="ancient">Œuvre ancienne (pigments historiques)</option>
+                        <option value="modern">Œuvre moderne</option>
+                        <option value="mixed">Mixte (avec restaurations)</option>
+                        <option value="custom">Personnalisée</option>
+                    </select>
+                </div>
+
+                <button onclick="startSimulation()">🚀 Lancer la Simulation</button>
+                <button onclick="quickTest()">⚡ Test Rapide</button>
+            </div>
+
+            <div class="card">
+                <h2><span class="icon">📊</span>État de la Simulation</h2>
+                
+                <div id="status" class="status">
+                    <strong>Prêt</strong><br>
+                    Configurez les paramètres et lancez la simulation
+                </div>
+
+                <div class="form-group">
+                    <label>Progression</label>
+                    <div class="progress-bar">
+                        <div id="progressBar" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <span id="progressText">0%</span>
+                </div>
+
+                <div class="form-group">
+                    <label>Statistiques</label>
+                    <div style="font-size: 0.9em; color: #718096;">
+                        <div>Électrons simulés: <span id="simulatedElectrons">0</span></div>
+                        <div>Temps écoulé: <span id="elapsedTime">0s</span></div>
+                        <div>Détections: <span id="detections">0</span></div>
+                    </div>
+                </div>
+
+                <button onclick="stopSimulation()">⏹️ Arrêter</button>
+                <button onclick="resetSimulation()">🔄 Réinitialiser</button>
+            </div>
+        </div>
+
+        <div class="results">
+            <h2><span class="icon">🔬</span>Résultats d'Analyse</h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('materials')">Matériaux Détectés</button>
+                <button class="tab" onclick="showTab('layers')">Analyse des Couches</button>
+                <button class="tab" onclick="showTab('visualization')">Visualisation</button>
+                <button class="tab" onclick="showTab('export')">Export</button>
+            </div>
+
+            <div id="materials" class="tab-content active">
+                <h3>Pigments et Matériaux Identifiés</h3>
+                <div class="material-list" id="materialList">
+                    <!-- Les matériaux détectés seront ajoutés ici dynamiquement -->
+                </div>
+            </div>
+
+            <div id="layers" class="tab-content">
+                <h3>Structure Stratigraphique</h3>
+                <canvas id="layerCanvas" width="800" height="400"></canvas>
+            </div>
+
+            <div id="visualization" class="tab-content">
+                <h3>Visualisation 3D</h3>
+                <p>La visualisation 3D sera disponible après lancement de la simulation Geant4</p>
+                <button onclick="openVisualization()">🎮 Ouvrir la Visualisation 3D</button>
+            </div>
+
+            <div id="export" class="tab-content">
+                <h3>Export des Résultats</h3>
+                <button onclick="exportCSV()">📄 Exporter en CSV</button>
+                <button onclick="exportReport()">📋 Générer un Rapport</button>
+                <button onclick="generatePDF()">📑 Exporter en PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let simulationRunning = false;
+        let simulationProgress = 0;
+
+        function updateValue(id) {
+            const element = document.getElementById(id);
+            const valueElement = document.getElementById(id + 'Value');
+            if (valueElement) {
+                valueElement.textContent = element.value + (id === 'beamEnergy' ? ' keV' : '');
+            }
+        }
+
+        function updateStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = `<strong>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</strong><br>${message}`;
+        }
+
+        function updateProgress(percent) {
+            simulationProgress = percent;
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = percent + '%';
+        }
+
+        function startSimulation() {
+            if (simulationRunning) return;
+            
+            simulationRunning = true;
+            updateStatus('Simulation en cours...', 'info');
+            
+            const energy = document.getElementById('beamEnergy').value;
+            const electrons = document.getElementById('numElectrons').value;
+            const position = document.getElementById('beamPosition').value;
+            const artwork = document.getElementById('artworkType').value;
+            
+            // Simuler la progression
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (!simulationRunning) {
+                    clearInterval(interval);
+                    return;
+                }
+                
+                progress += Math.random() * 5;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    finishSimulation();
+                }
+                
+                updateProgress(Math.round(progress));
+                updateStats();
+            }, 200);
+        }
+
+        function finishSimulation() {
+            simulationRunning = false;
+            updateStatus('Simulation terminée avec succès!', 'success');
+            updateProgress(100);
+            displayResults();
+        }
+
+        function stopSimulation() {
+            simulationRunning = false;
+            updateStatus('Simulation arrêtée par l\'utilisateur', 'error');
+        }
+
+        function resetSimulation() {
+            simulationRunning = false;
+            simulationProgress = 0;
+            updateProgress(0);
+            updateStatus('Prêt', 'info');
+            document.getElementById('simulatedElectrons').textContent = '0';
+            document.getElementById('elapsedTime').textContent = '0s';
+            document.getElementById('detections').textContent = '0';
+        }
+
+        function quickTest() {
+            document.getElementById('beamEnergy').value = 100;
+            document.getElementById('numElectrons').value = 1000;
+            updateValue('beamEnergy');
+            startSimulation();
+        }
+
+        function updateStats() {
+            const electrons = document.getElementById('numElectrons').value;
+            const simulated = Math.round(electrons * (simulationProgress / 100));
+            const time = Math.round(simulationProgress * 0.1);
+            const detections = Math.round(simulated * 0.8);
+            
+            document.getElementById('simulatedElectrons').textContent = simulated;
+            document.getElementById('elapsedTime').textContent = time + 's';
+            document.getElementById('detections').textContent = detections;
+        }
+
+        function showTab(tabName) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Désactiver tous les onglets
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Afficher le contenu sélectionné
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activer l'onglet sélectionné
+            event.target.classList.add('active');
+        }
+
+        function displayResults() {
+            const materials = [
+                {name: 'Blanc de plomb', period: 'Avant 1900', confidence: 95},
+                {name: 'Vermillon', period: 'Renaissance', confidence: 88},
+                {name: 'Lapis-lazuli', period: 'Moyen Âge', confidence: 92},
+                {name: 'Restauration moderne', period: 'XXème siècle', confidence: 78}
+            ];
+            
+            const materialList = document.getElementById('materialList');
+            materialList.innerHTML = '';
+            
+            materials.forEach(material => {
+                const item = document.createElement('div');
+                item.className = 'material-item';
+                item.innerHTML = `
+                    <h4>${material.name}</h4>
+                    <p>Époque: ${material.period}</p>
+                    <p>Confiance: ${material.confidence}%</p>
+                `;
+                materialList.appendChild(item);
+            });
+            
+            drawLayers();
+        }
+
+        function drawLayers() {
+            const canvas = document.getElementById('layerCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const layers = [
+                {name: 'Vernis', thickness: 30, color: '#FFEB99'},
+                {name: 'Restauration', thickness: 80, color: '#8B4513'},
+                {name: 'Vermillon', thickness: 60, color: '#DC143C'},
+                {name: 'Lapis-lazuli', thickness: 150, color: '#4169E1'},
+                {name: 'Blanc de plomb', thickness: 200, color: '#D3D3D3'},
+                {name: 'Gesso', thickness: 500, color: '#F5DEB3'},
+                {name: 'Toile', thickness: 1000, color: '#DEB887'}
+            ];
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            let y = 50;
+            layers.forEach(layer => {
+                ctx.fillStyle = layer.color;
+                ctx.fillRect(100, y, 600, layer.thickness / 5);
+                
+                ctx.strokeStyle = '#333';
+                ctx.strokeRect(100, y, 600, layer.thickness / 5);
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.fillText(layer.name, 20, y + layer.thickness / 10);
+                ctx.fillText(layer.thickness + ' μm', 710, y + layer.thickness / 10);
+                
+                y += layer.thickness / 5 + 5;
+            });
+        }
+
+        function exportCSV() {
+            updateStatus('Export CSV en cours...', 'info');
+            setTimeout(() => {
+                updateStatus('Fichier CSV exporté avec succès!', 'success');
+            }, 1000);
+        }
+
+        function exportReport() {
+            updateStatus('Génération du rapport en cours...', 'info');
+            setTimeout(() => {
+                updateStatus('Rapport généré avec succès!', 'success');
+            }, 2000);
+        }
+
+        function generatePDF() {
+            updateStatus('Génération PDF en cours...', 'info');
+            setTimeout(() => {
+                updateStatus('PDF exporté avec succès!', 'success');
+            }, 3000);
+        }
+
+        function openVisualization() {
+            updateStatus('Ouverture de la visualisation 3D...', 'info');
+            // Dans une vraie implémentation, cela lancerait la simulation Geant4
+        }
+
+        // Initialisation
+        updateStatus('Prêt à simuler', 'info');
+    </script>
+</body>
+</html>

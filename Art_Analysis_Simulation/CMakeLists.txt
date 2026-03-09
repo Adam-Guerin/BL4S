@@ -1,0 +1,63 @@
+cmake_minimum_required(VERSION 3.12)
+
+project(ArtAnalysisSimulation)
+
+# Find Geant4 package
+find_package(Geant4 REQUIRED)
+
+# Enable C++17
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Source files
+set(SOURCES
+    ArtDetectorConstruction.cc
+    ArtPhysicsList.cc
+    ArtPrimaryGeneratorAction.cc
+    ArtTrackingAction.cc
+    ArtEventAction.cc
+    ArtSteppingAction.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+    ArtUICommands.cc
+)
+
+# Header files
+set(HEADERS
+    ArtDetectorConstruction.hh
+    ArtPhysicsList.hh
+    ArtPrimaryGeneratorAction.hh
+    ArtTrackingAction.hh
+    ArtEventAction.hh
+    ArtSteppingAction.hh
+    ArtAnalysisManager.hh
+    ArtLogger.hh
+    ArtException.hh
+    ArtUICommands.hh
+)
+
+# Create executable
+add_executable(ArtAnalysisSimulation 
+    ArtAnalysisSimulation.cc
+    ${SOURCES}
+    ${HEADERS}
+)
+
+# Link with Geant4 libraries
+target_link_libraries(ArtAnalysisSimulation ${Geant4_LIBRARIES})
+target_include_directories(ArtAnalysisSimulation PRIVATE ${Geant4_INCLUDE_DIRS})
+
+# Set target properties
+set_target_properties(ArtAnalysisSimulation PROPERTIES
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+)
+
+# BFS-ready focused unit tests
+add_executable(bfs_ready_tests
+    bfs_ready_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+target_link_libraries(bfs_ready_tests ${Geant4_LIBRARIES})
+target_include_directories(bfs_ready_tests PRIVATE ${Geant4_INCLUDE_DIRS})

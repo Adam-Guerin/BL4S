@@ -2,7 +2,25 @@
 geant4/
 geant4-build/
 geant4-install/
-Art_Analysis_Simulation/
+
+# Build directories and files
+build/
+cmake-build-*/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+Art_Analysis_Simulation/build*/
+Art_Analysis_Simulation/*build*/
+Art_Analysis_Simulation/*.dir/
+Art_Analysis_Simulation/*.vcxproj
+Art_Analysis_Simulation/*.vcxproj.filters
+Art_Analysis_Simulation/*.sln
+Art_Analysis_Simulation/*.exe
+Art_Analysis_Simulation/x64/
+
+# Geant4 output files
 *.mac
 *.vis
 *.heprep

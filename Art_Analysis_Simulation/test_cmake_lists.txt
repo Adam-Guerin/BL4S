@@ -1,0 +1,216 @@
+# CMakeLists.txt for Art Analysis Simulation Test Suite
+cmake_minimum_required(VERSION 3.16)
+
+project(ArtAnalysisTests)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find Geant4
+find_package(Geant4 REQUIRED)
+
+# Find required system packages
+find_package(ROOT COMPONENTS Core Graf Math1 Hist Graf3d Gpad Net RIO Tree Thread)
+find_package(HDF5)
+
+# Include directories
+include_directories(${Geant4_INCLUDE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+# Define source files
+set(UNIT_TEST_SOURCES
+    unit_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+
+set(INTEGRATION_TEST_SOURCES
+    integration_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+
+set(PERFORMANCE_TEST_SOURCES
+    performance_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+
+set(PHYSICS_TEST_SOURCES
+    physics_validation_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+
+set(REGRESSION_TEST_SOURCES
+    regression_tests.cc
+    ArtAnalysisManager.cc
+    ArtLogger.cc
+)
+
+# Common libraries
+set(COMMON_LIBS
+    ${Geant4_LIBRARIES}
+    ${Geant4_G4FR_LIBRARY}
+    ${Geant4_G4GMocren_LIBRARY}
+    ${Geant4_G4RayTracer_LIBRARY}
+    ${Geant4_G4VRML_LIBRARY}
+    ${Geant4_G4VRML1_LIBRARY}
+    ${Geant4_G4VRML2_LIBRARY}
+    ${Geant4_G4VIS_OPENGL_LIBRARY}
+    ${Geant4_G4VIS_OPENGL_X11_LIBRARY}
+    ${Geant4_G4VIS_OPENGL_QT_LIBRARY}
+    ${Geant4_G4UIROOT_LIBRARY}
+    ${Geant4_G4UIXm_LIBRARY}
+    ${Geant4_G4UIWT_LIBRARY}
+    ${Geant4_G4UIterminal_LIBRARY}
+    ${Geant4_G4UIcurses_LIBRARY}
+    ${Geant4_G4UIgtk_LIBRARY}
+    ${Geant4_G4UIQt_LIBRARY}
+    ${Geant4_G4UIWin32_LIBRARY}
+    ${Geant4_G4UIAll_lib}
+)
+
+# Add ROOT libraries if found
+if(ROOT_FOUND)
+    list(APPEND COMMON_LIBS ${ROOT_LIBRARIES})
+    add_definitions(${ROOT_DEFINITIONS})
+endif()
+
+# Add HDF5 libraries if found
+if(HDF5_FOUND)
+    list(APPEND COMMON_LIBS ${HDF5_LIBRARIES})
+endif()
+
+# Build unit tests
+add_executable(unit_tests ${UNIT_TEST_SOURCES})
+target_link_libraries(unit_tests ${COMMON_LIBS})
+
+# Build integration tests
+add_executable(integration_tests ${INTEGRATION_TEST_SOURCES})
+target_link_libraries(integration_tests ${COMMON_LIBS})
+
+# Build performance tests
+add_executable(performance_tests ${PERFORMANCE_TEST_SOURCES})
+target_link_libraries(performance_tests ${COMMON_LIBS})
+
+# Build physics validation tests
+add_executable(physics_validation_tests ${PHYSICS_TEST_SOURCES})
+target_link_libraries(physics_validation_tests ${COMMON_LIBS})
+
+# Build regression tests
+add_executable(regression_tests ${REGRESSION_TEST_SOURCES})
+target_link_libraries(regression_tests ${COMMON_LIBS})
+
+# Compiler-specific options
+if(CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(unit_tests PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(integration_tests PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(performance_tests PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(physics_validation_tests PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(regression_tests PRIVATE -Wall -Wextra -pedantic)
+endif()
+
+if(MSVC)
+    target_compile_options(unit_tests PRIVATE /W4)
+    target_compile_options(integration_tests PRIVATE /W4)
+    target_compile_options(performance_tests PRIVATE /W4)
+    target_compile_options(physics_validation_tests PRIVATE /W4)
+    target_compile_options(regression_tests PRIVATE /W4)
+endif()
+
+# Add definitions for tests
+target_compile_definitions(unit_tests PRIVATE -DG4UI_USE_QT -DG4VIS_USE_OPENGL)
+target_compile_definitions(integration_tests PRIVATE -DG4UI_USE_QT -DG4VIS_USE_OPENGL)
+target_compile_definitions(performance_tests PRIVATE -DG4UI_USE_QT -DG4VIS_USE_OPENGL)
+target_compile_definitions(physics_validation_tests PRIVATE -DG4UI_USE_QT -DG4VIS_USE_OPENGL)
+target_compile_definitions(regression_tests PRIVATE -DG4UI_USE_QT -DG4VIS_USE_OPENGL)
+
+# Install targets
+install(TARGETS unit_tests DESTINATION bin)
+install(TARGETS integration_tests DESTINATION bin)
+install(TARGETS performance_tests DESTINATION bin)
+install(TARGETS physics_validation_tests DESTINATION bin)
+install(TARGETS regression_tests DESTINATION bin)
+
+# Custom targets for testing
+add_custom_target(test_unit
+    COMMAND unit_tests
+    DEPENDS unit_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running unit tests"
+)
+
+add_custom_target(test_integration
+    COMMAND integration_tests
+    DEPENDS integration_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running integration tests"
+)
+
+add_custom_target(test_performance
+    COMMAND performance_tests
+    DEPENDS performance_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running performance tests"
+)
+
+add_custom_target(test_physics
+    COMMAND physics_validation_tests
+    DEPENDS physics_validation_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running physics validation tests"
+)
+
+add_custom_target(test_regression
+    COMMAND regression_tests
+    DEPENDS regression_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running regression tests"
+)
+
+add_custom_target(test_all
+    COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+    DEPENDS unit_tests integration_tests performance_tests physics_validation_tests regression_tests
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running all tests"
+)
+
+# Enable testing
+enable_testing()
+
+# Add CTest tests
+add_test(NAME UnitTests COMMAND unit_tests)
+add_test(NAME IntegrationTests COMMAND integration_tests)
+add_test(NAME PerformanceTests COMMAND performance_tests)
+add_test(NAME PhysicsTests COMMAND physics_validation_tests)
+add_test(NAME RegressionTests COMMAND regression_tests)
+
+# Set test properties
+set_tests_properties(UnitTests PROPERTIES TIMEOUT 300)
+set_tests_properties(IntegrationTests PROPERTIES TIMEOUT 600)
+set_tests_properties(PerformanceTests PROPERTIES TIMEOUT 900)
+set_tests_properties(PhysicsTests PROPERTIES TIMEOUT 600)
+set_tests_properties(RegressionTests PROPERTIES TIMEOUT 300)
+
+# Add test labels
+set_tests_properties(UnitTests PROPERTIES LABELS "unit")
+set_tests_properties(IntegrationTests PROPERTIES LABELS "integration")
+set_tests_properties(PerformanceTests PROPERTIES LABELS "performance")
+set_tests_properties(PhysicsTests PROPERTIES LABELS "physics")
+set_tests_properties(RegressionTests PROPERTIES LABELS "regression")
+
+# Print configuration
+message(STATUS "Art Analysis Tests Configuration:")
+message(STATUS "  Geant4 version: ${Geant4_VERSION}")
+message(STATUS "  C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "  Build type: ${CMAKE_BUILD_TYPE}")
+
+if(ROOT_FOUND)
+    message(STATUS "  ROOT version: ${ROOT_VERSION}")
+endif()
+
+if(HDF5_FOUND)
+    message(STATUS "  HDF5 version: ${HDF5_VERSION}")
+endif()
