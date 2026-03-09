@@ -32,8 +32,9 @@ class ReconstructionConfig:
     depth_mm: float = 2.11
     iterations: int = 40
     relaxation: float = 0.2
-    weight_theta: float = 0.7
-    weight_energy: float = 0.3
+    weight_scattering_budget: float = 0.55
+    weight_thickness: float = 0.30
+    weight_energy: float = 0.15
 
 
 def _safe_float(row: Dict[str, str], key: str, default: float = 0.0) -> float:
@@ -79,17 +80,12 @@ def load_event_rows(csv_path: Path) -> List[Dict[str, str]]:
     return list(reader)
 
 
-def normalize_observables(theta_mrad: np.ndarray, delta_e_mev: np.ndarray) -> np.ndarray:
-    def robust_scale(arr: np.ndarray) -> np.ndarray:
-        if arr.size == 0:
-            return arr
-        q10, q90 = np.percentile(arr, [10, 90])
-        scale = max(q90 - q10, 1e-9)
-        return np.clip((arr - q10) / scale, 0.0, 1.0)
-
-    theta_n = robust_scale(theta_mrad)
-    de_n = robust_scale(delta_e_mev)
-    return theta_n, de_n
+def robust_scale(arr: np.ndarray) -> np.ndarray:
+    if arr.size == 0:
+        return arr
+    q10, q90 = np.percentile(arr, [10, 90])
+    scale = max(q90 - q10, 1e-9)
+    return np.clip((arr - q10) / scale, 0.0, 1.0)
 
 
 def make_voxel_path(
@@ -133,9 +129,22 @@ def reconstruct_volume(
         raise ValueError("No valid tomography rows found.")
 
     theta_mrad = np.array([_safe_float(r, "theta_mrad", 0.0) for r in valid_rows], dtype=float)
+    x_over_x0 = np.array([_safe_float(r, "x_over_X0_est", 0.0) for r in valid_rows], dtype=float)
+    thickness_mm = np.array([_safe_float(r, "thickness_est_mm", 0.0) for r in valid_rows], dtype=float)
     delta_e_mev = np.array([_safe_float(r, "deltaE_MeV", 0.0) for r in valid_rows], dtype=float)
-    theta_n, de_n = normalize_observables(theta_mrad, delta_e_mev)
-    y_meas = cfg.weight_theta * theta_n + cfg.weight_energy * de_n
+
+    # Prefer physically reconstructed observables when present in CSV.
+    scattering_budget = np.where(x_over_x0 > 0.0, x_over_x0, np.maximum(theta_mrad, 0.0))
+    thickness_proxy = np.where(thickness_mm > 0.0, thickness_mm, np.maximum(delta_e_mev, 0.0))
+
+    budget_n = robust_scale(scattering_budget)
+    thickness_n = robust_scale(thickness_proxy)
+    de_n = robust_scale(delta_e_mev)
+    y_meas = (
+        cfg.weight_scattering_budget * budget_n
+        + cfg.weight_thickness * thickness_n
+        + cfg.weight_energy * de_n
+    )
 
     paths: List[List[Tuple[int, int, int]]] = []
     for r in valid_rows:
@@ -244,7 +253,8 @@ def save_outputs(
     summary = (
         f"nx={cfg.nx}, ny={cfg.ny}, nz={cfg.nz}\n"
         f"iterations={cfg.iterations}, relaxation={cfg.relaxation}\n"
-        f"weight_theta={cfg.weight_theta}, weight_energy={cfg.weight_energy}\n"
+        f"weight_scattering_budget={cfg.weight_scattering_budget}, "
+        f"weight_thickness={cfg.weight_thickness}, weight_energy={cfg.weight_energy}\n"
         f"rms_residual={rms:.6f}\n"
         f"corr_obs_pred={corr:.6f}\n"
     )
@@ -260,8 +270,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--nz", type=int, default=20)
     p.add_argument("--iterations", type=int, default=40)
     p.add_argument("--relaxation", type=float, default=0.2)
-    p.add_argument("--weight-theta", type=float, default=0.7)
-    p.add_argument("--weight-energy", type=float, default=0.3)
+    p.add_argument("--weight-scattering-budget", type=float, default=0.55)
+    p.add_argument("--weight-thickness", type=float, default=0.30)
+    p.add_argument("--weight-energy", type=float, default=0.15)
     p.add_argument("--width-mm", type=float, default=200.0)
     p.add_argument("--height-mm", type=float, default=200.0)
     p.add_argument("--depth-mm", type=float, default=2.11)
@@ -279,7 +290,8 @@ def main() -> None:
         depth_mm=args.depth_mm,
         iterations=args.iterations,
         relaxation=args.relaxation,
-        weight_theta=args.weight_theta,
+        weight_scattering_budget=args.weight_scattering_budget,
+        weight_thickness=args.weight_thickness,
         weight_energy=args.weight_energy,
     )
 

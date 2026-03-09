@@ -7,6 +7,7 @@
 #include "G4SystemOfUnits.hh"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <iomanip>
@@ -68,27 +69,66 @@ void ArtAnalysisManager::ConfigureGrid(G4int nX, G4int nY, G4double halfWidth, G
 
     const size_t nCells = static_cast<size_t>(fGridNX * fGridNY);
     fCellCounts.assign(nCells, 0);
+    fCellIncidentCounts.assign(nCells, 0);
+    fCellTransmittedCounts.assign(nCells, 0);
     fCellScatteringSum.assign(nCells, 0.0);
     fCellEnergyLossSum.assign(nCells, 0.0);
+    fCellThicknessSum.assign(nCells, 0.0);
 }
 
 void ArtAnalysisManager::AddTomographyEvent(const TomographyEvent& eventRecord)
 {
-    fTomographyEvents.push_back(eventRecord);
+    TomographyEvent enriched = eventRecord;
+    enriched.estimatedThickness = 0.0;
+    enriched.estimatedRadiationLength = 0.0;
+    enriched.estimatedStoppingPower = 0.0;
+    enriched.estimatedMu = 0.0;
+    enriched.estimatedTransmission = 0.0;
+    enriched.inferredMaterial = "Unknown";
 
-    if (!eventRecord.hasIncomingTrack || !eventRecord.hasOutgoingTrack) {
+    if (enriched.estimatedXOverX0 > 0.0 && enriched.energyLoss > 0.0 && enriched.initialEnergy > 0.0) {
+        G4String materialName;
+        G4double thickness = 0.0;
+        G4double radiationLength = 0.0;
+        G4double stoppingPower = 0.0;
+        if (InferMaterialAndThicknessFromObservables(
+                enriched.estimatedXOverX0,
+                enriched.energyLoss,
+                enriched.initialEnergy,
+                materialName,
+                thickness,
+                radiationLength,
+                stoppingPower)) {
+            enriched.inferredMaterial = materialName;
+            enriched.estimatedThickness = thickness;
+            enriched.estimatedRadiationLength = radiationLength;
+            enriched.estimatedStoppingPower = stoppingPower;
+            const G4double safeInitial = std::max(1e-9 * MeV, enriched.initialEnergy);
+            enriched.estimatedMu = stoppingPower / safeInitial;
+            enriched.estimatedTransmission = std::exp(-enriched.estimatedMu * thickness);
+        }
+    }
+
+    fTomographyEvents.push_back(enriched);
+
+    if (!enriched.hasIncomingTrack || !enriched.hasOutgoingTrack) {
         return;
     }
 
-    const G4int cellIndex = ComputeCellIndex(eventRecord.objectIntersection);
+    const G4int cellIndex = ComputeCellIndex(enriched.objectIntersection);
     if (cellIndex < 0) {
         return;
     }
 
     const size_t index = static_cast<size_t>(cellIndex);
     fCellCounts[index] += 1;
-    fCellScatteringSum[index] += eventRecord.scatteringAngle;
-    fCellEnergyLossSum[index] += eventRecord.energyLoss;
+    fCellScatteringSum[index] += enriched.scatteringAngle;
+    fCellEnergyLossSum[index] += enriched.energyLoss;
+    fCellThicknessSum[index] += enriched.estimatedThickness;
+    fCellIncidentCounts[index] += 1;
+    if (enriched.transmitted) {
+        fCellTransmittedCounts[index] += 1;
+    }
 }
 
 void ArtAnalysisManager::AnalyzeLayers()
@@ -191,7 +231,7 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
     }
 
     summaryFile << "# BFS-ready summary\n";
-    summaryFile << "event_id,has_trigger,has_cal_in,has_cal_out,valid_tomography,transmitted,projection_angle_y_mrad,theta_mrad,x_over_X0_est,initial_energy_MeV,cal_in_energy_MeV,cal_out_energy_MeV,final_energy_MeV,deltaE_MeV,obj_x_mm,obj_y_mm,in_ux,in_uy,in_uz,out_ux,out_uy,out_uz\n";
+    summaryFile << "event_id,has_trigger,has_cal_in,has_cal_out,valid_tomography,transmitted,projection_angle_y_mrad,theta_mrad,x_over_X0_est,thickness_est_mm,X0_est_mm,dedx_est_MeV_per_mm,mu_est_per_mm,transmission_est,inferred_material,initial_energy_MeV,cal_in_energy_MeV,cal_out_energy_MeV,final_energy_MeV,deltaE_MeV,obj_x_mm,obj_y_mm,in_ux,in_uy,in_uz,out_ux,out_uy,out_uz\n";
     for (const auto& eventRecord : fTomographyEvents) {
         const bool valid = eventRecord.hasIncomingTrack && eventRecord.hasOutgoingTrack && eventRecord.hasCalorimeterEnergy;
         summaryFile << eventRecord.eventID << ","
@@ -203,6 +243,12 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
                     << eventRecord.projectionAngleY / mrad << ","
                     << eventRecord.scatteringAngle / mrad << ","
                     << eventRecord.estimatedXOverX0 << ","
+                    << eventRecord.estimatedThickness / mm << ","
+                    << eventRecord.estimatedRadiationLength / mm << ","
+                    << eventRecord.estimatedStoppingPower / (MeV / mm) << ","
+                    << eventRecord.estimatedMu / (1.0 / mm) << ","
+                    << eventRecord.estimatedTransmission << ","
+                    << eventRecord.inferredMaterial << ","
                     << eventRecord.initialEnergy / MeV << ","
                     << eventRecord.upstreamCalorimeterEnergy / MeV << ","
                     << eventRecord.downstreamCalorimeterEnergy / MeV << ","
@@ -219,7 +265,7 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
                     << "\n";
     }
 
-    summaryFile << "\n# grid_cell,ix,iy,count,mean_theta_mrad,mean_deltaE_MeV\n";
+    summaryFile << "\n# grid_cell,ix,iy,count,mean_theta_mrad,mean_deltaE_MeV,mean_thickness_mm,transmission,mu_est_per_mm\n";
     for (G4int iy = 0; iy < fGridNY; ++iy) {
         for (G4int ix = 0; ix < fGridNX; ++ix) {
             const G4int linear = iy * fGridNX + ix;
@@ -227,12 +273,18 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
             const G4int count = fCellCounts[index];
             const G4double meanTheta = (count > 0) ? fCellScatteringSum[index] / count : 0.0;
             const G4double meanDeltaE = (count > 0) ? fCellEnergyLossSum[index] / count : 0.0;
+            const G4double meanThickness = (count > 0) ? fCellThicknessSum[index] / count : 0.0;
+            const G4double transmission = ComputeTransmission(fCellIncidentCounts[index], fCellTransmittedCounts[index]);
+            const G4double mu = EstimateLinearAttenuationFromTransmission(transmission, meanThickness);
             summaryFile << linear << ","
                         << ix << ","
                         << iy << ","
                         << count << ","
                         << meanTheta / mrad << ","
-                        << meanDeltaE / MeV
+                        << meanDeltaE / MeV << ","
+                        << meanThickness / mm << ","
+                        << transmission << ","
+                        << mu / (1.0 / mm)
                         << "\n";
         }
     }
@@ -266,7 +318,7 @@ G4double ArtAnalysisManager::CalculateStdDev(const std::vector<G4double>& values
     return std::sqrt(squared / (values.size() - 1));
 }
 
-G4double ArtAnalysisManager::CalculateMaterialZ(const G4String& material)
+G4double ArtAnalysisManager::CalculateMaterialZ(const G4String& material) const
 {
     if (material.find("Lead") != G4String::npos || material.find("Pb") != G4String::npos) return 82.0;
     if (material.find("Vermilion") != G4String::npos || material.find("Hg") != G4String::npos) return 80.0;
@@ -313,7 +365,7 @@ void ArtAnalysisManager::CalculateScatteringSignatures()
     ART_INFO("CalculateScatteringSignatures is covered by tomography event data");
 }
 
-G4double ArtAnalysisManager::CalculateStoppingPower(const G4String& material, G4double energy)
+G4double ArtAnalysisManager::CalculateStoppingPower(const G4String& material, G4double energy) const
 {
     if (energy <= 0.0) {
         return 0.0;
@@ -347,7 +399,7 @@ G4bool ArtAnalysisManager::IsHistoricalPigment(const G4String& material)
            material.find("TinYellow") != G4String::npos;
 }
 
-G4double ArtAnalysisManager::CalculateDensity(const G4String& material)
+G4double ArtAnalysisManager::CalculateDensity(const G4String& material) const
 {
     if (material.find("Lead") != G4String::npos) return 6.5 * g / cm3;
     if (material.find("Vermilion") != G4String::npos) return 8.1 * g / cm3;
@@ -466,6 +518,22 @@ G4double ArtAnalysisManager::EstimateThicknessFromStoppingPower(G4double energyL
     return energyLoss / stoppingPower;
 }
 
+G4double ArtAnalysisManager::EstimateRadiationLengthFromThicknessAndBudget(G4double thickness, G4double xOverX0)
+{
+    if (thickness <= 0.0 || xOverX0 <= 0.0) {
+        return 0.0;
+    }
+    return thickness / xOverX0;
+}
+
+G4double ArtAnalysisManager::EstimateLinearAttenuationFromTransmission(G4double transmission, G4double thickness)
+{
+    if (thickness <= 0.0 || transmission <= 0.0 || transmission > 1.0) {
+        return 0.0;
+    }
+    return -std::log(transmission) / thickness;
+}
+
 G4double ArtAnalysisManager::ComputeEnergyLossFromCalorimeters(
     G4double upstreamEnergy, G4bool hasUpstreamEnergy,
     G4double downstreamEnergy, G4bool hasDownstreamEnergy,
@@ -524,4 +592,74 @@ G4bool ArtAnalysisManager::ShouldInjectFakeHit(G4double randomUniform, G4double 
 {
     const G4double prob = ClampProbability(fakeProbability);
     return randomUniform <= prob;
+}
+
+G4bool ArtAnalysisManager::InferMaterialAndThicknessFromObservables(
+    G4double xOverX0,
+    G4double energyLoss,
+    G4double kineticEnergy,
+    G4String& materialName,
+    G4double& thickness,
+    G4double& radiationLength,
+    G4double& stoppingPower) const
+{
+    if (xOverX0 <= 0.0 || energyLoss <= 0.0 || kineticEnergy <= 0.0) {
+        return false;
+    }
+
+    const std::array<G4String, 9> candidates = {{
+        "LeadWhite",
+        "ModernPaint",
+        "Varnish",
+        "Vermilion",
+        "LapisLazuli",
+        "Malachite",
+        "LeadTinYellow",
+        "Gesso",
+        "Canvas",
+    }};
+
+    G4double bestScore = std::numeric_limits<G4double>::max();
+    G4String bestMaterial = "";
+    G4double bestThickness = 0.0;
+    G4double bestX0 = 0.0;
+    G4double bestDedx = 0.0;
+
+    for (const auto& candidate : candidates) {
+        G4Material* mat = G4Material::GetMaterial(candidate, false);
+        if (mat == nullptr) {
+            continue;
+        }
+        const G4double x0 = mat->GetRadlen();
+        if (x0 <= 0.0) {
+            continue;
+        }
+        const G4double dedx = CalculateStoppingPower(candidate, kineticEnergy);
+        if (dedx <= 0.0) {
+            continue;
+        }
+
+        const G4double x = xOverX0 * x0;
+        const G4double predictedEnergyLoss = x * dedx;
+        const G4double denom = std::max(1e-9 * MeV, energyLoss);
+        const G4double relError = std::abs(predictedEnergyLoss - energyLoss) / denom;
+        const G4double score = relError;
+        if (score < bestScore) {
+            bestScore = score;
+            bestMaterial = candidate;
+            bestThickness = x;
+            bestX0 = x0;
+            bestDedx = dedx;
+        }
+    }
+
+    if (bestMaterial.empty()) {
+        return false;
+    }
+
+    materialName = bestMaterial;
+    thickness = bestThickness;
+    radiationLength = bestX0;
+    stoppingPower = bestDedx;
+    return true;
 }

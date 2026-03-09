@@ -132,11 +132,11 @@ private:
     // Analysis methods
     G4double CalculateMean(const std::vector<G4double>& values);
     G4double CalculateStdDev(const std::vector<G4double>& values);
-    G4double CalculateMaterialZ(const G4String& material);
+    G4double CalculateMaterialZ(const G4String& material) const;
     G4double EstimateThickness(const G4String& material, G4double energyLoss, G4double kineticEnergy);
-    G4double CalculateStoppingPower(const G4String& material, G4double energy);
+    G4double CalculateStoppingPower(const G4String& material, G4double energy) const;
     G4bool IsHistoricalPigment(const G4String& material);
-    G4double CalculateDensity(const G4String& material);
+    G4double CalculateDensity(const G4String& material) const;
     G4int ComputeCellIndex(const G4ThreeVector& objectIntersection) const;
     G4bool InferMaterialAndThicknessFromObservables(
         G4double xOverX0,
