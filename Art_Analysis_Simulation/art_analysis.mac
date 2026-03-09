@@ -1,0 +1,20 @@
+# BL4S-ready macro: relativistic electron tomography in T9-like conditions
+
+/control/verbose 2
+/tracking/verbose 0
+/event/verbose 0
+/run/verbose 1
+/run/initialize
+
+# Beam configuration through custom /art commands
+/art/beamEnergy 2 GeV
+/art/beamSigma 1 mm
+/art/grid 24
+
+# Main acquisition
+/run/beamOn 10000
+
+# Analysis output
+/art/analyze
+/art/save bfs_validation_results.csv
+/art/report console

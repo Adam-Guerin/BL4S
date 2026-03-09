@@ -26,6 +26,7 @@ Art_Analysis_Simulation/x64/
 *.heprep
 *.root
 *.gdml
+!Art_Analysis_Simulation/*.mac
 
 # CMake build directories
 build/

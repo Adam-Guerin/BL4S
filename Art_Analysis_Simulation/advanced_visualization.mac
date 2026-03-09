@@ -1,0 +1,94 @@
+# Macro de visualisation avancée (alignée avec la géométrie actuelle)
+# Volumes actuels:
+# TriggerScintillator, TrackerUp1, TrackerUp2, TrackerDown1, TrackerDown2,
+# CalorimeterIn, CalorimeterOut, Varnish, ModernPaint, Vermilion, LapisLazuli,
+# LeadWhite, Malachite, LeadTinYellow, Gesso, Canvas
+
+# Initialisation
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Chaîne de détection/bl4s actuelle
+/art/beamEnergy 2 GeV
+/art/beamSigma 1 mm
+/art/instrumentResponse true
+/art/trackerResolution 50 um
+/art/caloResolution 0.10 0.01
+/art/caloNoise 2 MeV
+
+# Fenêtre et scène
+/vis/open OGL 1200x800-0+0
+/vis/viewer/set/autoRefresh false
+/vis/scene/create
+/vis/scene/add/volume
+/vis/scene/add/trajectories smooth
+/vis/scene/add/hits
+/vis/scene/endOfEventAction accumulate 300
+
+# Affichage trajectoires
+/tracking/storeTrajectory 1
+/vis/trajectory/default/drawByCharge
+/vis/trajectory/default/drawStepPts true
+/vis/trajectory/default/stepPtsSize 2
+
+# Caméra et style
+/vis/viewer/set/viewpointVector -1 0.45 0.25
+/vis/viewer/set/lightsVector -1 0.45 0.25
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/lineSegmentsPerCircle 160
+
+# Visibilité des couches
+/vis/geometry/set/visibility World 0
+/vis/geometry/set/visibility Varnish 1
+/vis/geometry/set/visibility ModernPaint 1
+/vis/geometry/set/visibility Vermilion 1
+/vis/geometry/set/visibility LapisLazuli 1
+/vis/geometry/set/visibility LeadWhite 1
+/vis/geometry/set/visibility Malachite 1
+/vis/geometry/set/visibility LeadTinYellow 1
+/vis/geometry/set/visibility Gesso 1
+/vis/geometry/set/visibility Canvas 1
+
+# Détecteurs actuels
+/vis/geometry/set/visibility TriggerScintillator 1
+/vis/geometry/set/visibility TrackerUp1 1
+/vis/geometry/set/visibility TrackerUp2 1
+/vis/geometry/set/visibility TrackerDown1 1
+/vis/geometry/set/visibility TrackerDown2 1
+/vis/geometry/set/visibility CalorimeterIn 1
+/vis/geometry/set/visibility CalorimeterOut 1
+
+/vis/geometry/set/colour TrackerUp1 0.0 0.8 0.0 0.85
+/vis/geometry/set/colour TrackerUp2 0.0 0.8 0.0 0.85
+/vis/geometry/set/colour TrackerDown1 0.0 0.8 0.0 0.85
+/vis/geometry/set/colour TrackerDown2 0.0 0.8 0.0 0.85
+/vis/geometry/set/colour CalorimeterIn 0.85 0.1 0.1 0.8
+/vis/geometry/set/colour CalorimeterOut 0.85 0.1 0.1 0.8
+/vis/geometry/set/colour TriggerScintillator 0.1 0.7 0.9 0.75
+
+# Couleurs/alpha des couches (compatibles noms actuels)
+/vis/geometry/set/colour Varnish 1.0 1.0 0.8 0.25
+/vis/geometry/set/colour ModernPaint 0.6 0.3 0.1 0.45
+/vis/geometry/set/colour Vermilion 0.9 0.1 0.1 0.6
+/vis/geometry/set/colour LapisLazuli 0.1 0.2 0.8 0.55
+/vis/geometry/set/colour LeadWhite 0.8 0.8 0.8 0.4
+/vis/geometry/set/colour Malachite 0.1 0.6 0.3 0.55
+/vis/geometry/set/colour LeadTinYellow 0.9 0.7 0.2 0.6
+/vis/geometry/set/colour Gesso 0.9 0.9 0.7 0.3
+/vis/geometry/set/colour Canvas 0.8 0.7 0.5 0.45
+
+# Démarrage
+/vis/viewer/set/autoRefresh true
+/vis/verbose errors
+
+/control/echo "=== Visualisation 3D avancée (géométrie à jour) ==="
+/control/echo "Rotation: clic gauche, Zoom: clic droit/molette"
+/control/echo "Commande live utile: /run/beamOn 100"
+
+# Petite acquisition de démo
+/run/beamOn 120
+
+/control/echo "=== Démo terminée, vous pouvez continuer avec /run/beamOn N ==="

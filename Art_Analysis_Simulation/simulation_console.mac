@@ -1,0 +1,24 @@
+# Simulation sans visualisation 3D
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 100 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+# Lancer la simulation
+/control/echo "=== Simulation d'Analyse d'Art ==="
+/control/echo "Nombre d'électrons: 1000"
+/run/beamOn 1000
+
+# Analyser les résultats
+/art/analyze
+/art/save simulation_results.csv
+/art/report console
+
+/control/echo "Simulation terminée!"
+/control/echo "Résultats sauvegardés dans simulation_results.csv"

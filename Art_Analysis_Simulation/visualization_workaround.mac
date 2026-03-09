@@ -1,0 +1,48 @@
+# Macro de visualisation Geant4 avec contournement pour Windows
+# Évite les problèmes de session UI en utilisant le mode batch avec sortie ASCII
+
+# Configuration de base
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Pas de visualisation 3D (problème Windows)
+# Utilisation du mode ASCII pour visualisation textuelle
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 100 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+# Messages informatifs
+/control/echo "=== Simulation d'Analyse d'Art - Mode ASCII ==="
+/control/echo "Faisceau: Électrons de 100 keV"
+/control/echo "Position: (0, 0, -20) cm"
+/control/echo "Direction: Axe Z"
+/control/echo ""
+
+# Simulation avec visualisation textuelle
+/control/echo "🚀 Lancement de la simulation avec 1000 électrons..."
+/run/beamOn 1000
+
+/control/echo ""
+/control/echo "📊 Analyse des résultats collectés..."
+/art/analyze
+
+/control/echo ""
+/control/echo "💾 Sauvegarde des résultats..."
+/art/save ascii_simulation_results.csv
+
+/control/echo ""
+/control/echo "📝 Génération du rapport..."
+/art/report console
+
+/control/echo ""
+/control/echo "✅ Simulation ASCII terminée!"
+/control/echo "📁 Résultats: ascii_simulation_results.csv"
+/control/echo ""
+/control/echo "Pour visualisations graphiques:"
+/control/echo "  python generate_report.py"
+/control/echo "  start user_interface.html"

@@ -1,0 +1,55 @@
+# BL4S multi-angle tomography acquisition
+# Goal: collect several projections for layered-object reconstruction
+
+/control/verbose 2
+/tracking/verbose 0
+/event/verbose 0
+/run/verbose 1
+/run/initialize
+
+/art/beamEnergy 2 GeV
+/art/beamSigma 1 mm
+/art/grid 24
+/art/instrumentResponse true
+/art/trackerResolution 50 um
+/art/caloResolution 0.10 0.01
+/art/caloNoise 2 MeV
+/art/triggerEfficiency 0.995
+/art/trackerEfficiency 0.98
+/art/caloEfficiency 0.99
+/art/triggerFakeProb 0.0005
+/art/trackerFakeProb 0.002
+/art/caloFakeProb 0.001
+
+/control/echo "=== Projection -12 mrad ==="
+/art/beamTiltY -12 mrad
+/run/beamOn 1500
+
+/control/echo "=== Projection -8 mrad ==="
+/art/beamTiltY -8 mrad
+/run/beamOn 1500
+
+/control/echo "=== Projection -4 mrad ==="
+/art/beamTiltY -4 mrad
+/run/beamOn 1500
+
+/control/echo "=== Projection 0 mrad ==="
+/art/beamTiltY 0 mrad
+/run/beamOn 2000
+
+/control/echo "=== Projection +4 mrad ==="
+/art/beamTiltY 4 mrad
+/run/beamOn 1500
+
+/control/echo "=== Projection +8 mrad ==="
+/art/beamTiltY 8 mrad
+/run/beamOn 1500
+
+/control/echo "=== Projection +12 mrad ==="
+/art/beamTiltY 12 mrad
+/run/beamOn 1500
+
+/control/echo "=== Final analysis ==="
+/art/analyze
+/art/save bl4s_multiangle_results.csv
+/art/report console

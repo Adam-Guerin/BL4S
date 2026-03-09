@@ -1,0 +1,59 @@
+# Macro d'analyse batch pour études systématiques
+# Test différents paramètres et génère des données comparatives
+
+# Contrôle de l'exécution
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/step/verbose 0
+/run/initialize
+
+# Désactiver la visualisation pour le mode batch
+#/vis/disable
+
+# Configuration du faisceau par défaut
+/gun/particle e-
+/gun/direction 0 0 1
+/gun/position 0 0 -20 cm
+
+# Étude 1: Variation de l'énergie du faisceau
+/control/echo "=== Étude 1: Variation de l'énergie ==="
+/control/foreach energy {50 keV 75 keV 100 keV 150 keV 200 keV}
+  /control/echo "Énergie: {energy}"
+  /gun/energy {energy}
+  /run/beamOn 5000
+  /art/save results_energy_{energy}.csv
+/control/loop
+
+# Étude 2: Variation de la position (balayage)
+/control/echo "=== Étude 2: Balayage latéral ==="
+/gun/energy 100 keV
+/control/foreach xpos {-5 cm -2.5 cm 0 cm 2.5 cm 5 cm}
+  /control/foreach ypos {-5 cm -2.5 cm 0 cm 2.5 cm 5 cm}
+    /control/echo "Position: X={xpos}, Y={ypos}"
+    /gun/position {xpos} {ypos} -20 cm
+    /run/beamOn 2000
+    /art/save results_scan_{xpos}_{ypos}.csv
+  /control/loop
+/control/loop
+
+# Étude 3: Test avec différents nombres d'électrons
+/control/echo "=== Étude 3: Statistique ==="
+/gun/position 0 0 -20 cm
+/control/foreach nelectrons {1000 2500 5000 10000 25000}
+  /control/echo "Nombre d'électrons: {nelectrons}"
+  /run/beamOn {nelectrons}
+  /art/save results_stats_{nelectrons}.csv
+/control/loop
+
+# Étude 4: Test de différents angles d'incidence
+/control/echo "=== Étude 4: Angles d'incidence ==="
+/run/beamOn 5000
+/control/foreach angle {0 deg 15 deg 30 deg 45 deg}
+  /control/echo "Angle: {angle}"
+  /gun/direction 0 {sin(angle)} {cos(angle)}
+  /run/beamOn 3000
+  /art/save results_angle_{angle}.csv
+/control/loop
+
+/control/echo "=== Analyse batch terminée ==="

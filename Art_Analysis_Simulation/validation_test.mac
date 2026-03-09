@@ -1,0 +1,32 @@
+# Macro de test pour valider que toutes les commandes fonctionnent
+# Test complet de la simulation avec validation des résultats
+
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 2 GeV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+# Test des commandes UI
+/control/echo "=== Test des commandes UI ==="
+/art/verbose true
+/art/beamEnergy 2 GeV
+/art/beamSigma 1 mm
+/art/grid 24
+
+# Simulation de test
+/control/echo "=== Lancement de la simulation de test ==="
+/run/beamOn 1000
+
+# Test des commandes d'analyse
+/control/echo "=== Test des commandes d'analyse ==="
+/art/analyze
+/art/save bfs_validation_results.csv
+/art/report console
+
+/control/echo "=== Test terminé ==="

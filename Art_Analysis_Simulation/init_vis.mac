@@ -1,0 +1,36 @@
+# Macro d'initialisation avec visualisation
+# Configuration de base
+
+# Contrôle de l'exécution
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/step/verbose 0
+
+# Initialisation
+/run/initialize
+
+# Configuration de la visualisation
+/vis/open OGL 600x600-0+0
+/vis/drawVolume
+/vis/viewer/set/autoRefresh false
+/vis/scene/create
+/vis/scene/add/volume
+/vis/scene/add/trajectories smooth
+/vis/scene/end
+
+# Vue par défaut
+/vis/viewer/set/viewpointVector -1 0 0
+/vis/viewer/set/lightsVector -1 0 0
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/lineSegmentsPerCircle 100
+
+# Couleurs pour les trajectoires
+/vis/trajectory/default/drawByCharge
+/vis/trajectory/default/drawStepPts true
+/vis/trajectory/default/stepPtsSize 2
+
+# Rafraîchissement automatique
+/vis/viewer/set/autoRefresh true
+/vis/verbose errors

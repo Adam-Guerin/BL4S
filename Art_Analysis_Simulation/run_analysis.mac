@@ -1,0 +1,22 @@
+# Macro pour l'analyse d'œuvre d'art
+# Configuration de la simulation
+
+# Contrôle de l'exécution
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/step/verbose 0
+
+# Paramètres du faisceau
+#/gun/energy 3.0 MeV
+#/gun/position 0 0 -15 cm
+#/gun/direction 0 0 1
+#/gun/particle e-
+
+# Nombre d'électrons à simuler
+/run/beamOn 10000
+
+# Analyse des résultats
+/art/analyze
+/art/save results_art_analysis.csv
+/art/report

@@ -1,0 +1,51 @@
+# Macro de test de performance pour évaluer la simulation
+# Test différents nombres d'électrons et mesure le temps
+
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 100 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+# Test de performance avec différents nombres d'électrons
+/control/echo "=== Performance Test ==="
+
+# Test 1: 1000 électrons
+/control/echo "Test 1: 1000 électrons"
+/run/beamOn 1000
+/art/analyze
+/art/save perf_test_1000.csv
+
+# Reset pour le prochain test
+/art/reset
+
+# Test 2: 5000 électrons
+/control/echo "Test 2: 5000 électrons"
+/run/beamOn 5000
+/art/analyze
+/art/save perf_test_5000.csv
+
+# Reset pour le prochain test
+/art/reset
+
+# Test 3: 10000 électrons
+/control/echo "Test 3: 10000 électrons"
+/run/beamOn 10000
+/art/analyze
+/art/save perf_test_10000.csv
+
+# Reset pour le prochain test
+/art/reset
+
+# Test 4: 50000 électrons
+/control/echo "Test 4: 50000 électrons"
+/run/beamOn 50000
+/art/analyze
+/art/save perf_test_50000.csv
+
+/control/echo "=== Performance Test Completed ==="
