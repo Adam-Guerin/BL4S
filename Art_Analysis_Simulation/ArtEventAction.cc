@@ -1,13 +1,16 @@
 #include "ArtEventAction.hh"
+#include "ArtDetectorConstruction.hh"
 #include "G4Event.hh"
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 #include <algorithm>
 #include <array>
+#include <cmath>
 
-ArtEventAction::ArtEventAction()
+ArtEventAction::ArtEventAction(ArtDetectorConstruction* detectorConstruction)
     : G4UserEventAction(),
       fAnalysisManager(ArtAnalysisManager::Instance()),
+      fDetectorConstruction(detectorConstruction),
       fTrackStarted(false),
       fCurrentEventID(-1),
       fInitialEnergy(0.0),
@@ -24,7 +27,10 @@ ArtEventAction::ArtEventAction()
       fCalorimeterEfficiency(0.99),
       fTrackerFakeProbability(0.002),
       fCalorimeterFakeProbability(0.001),
-      fTriggerFakeProbability(0.0005)
+      fTriggerFakeProbability(0.0005),
+      fTransmissionMinEnergy(50.0 * MeV),
+      fTransmissionMaxAngle(25.0 * mrad),
+      fProjectionAngleY(0.0)
 {
 }
 
@@ -110,7 +116,8 @@ void ArtEventAction::EndOfEventAction(const G4Event*)
     eventRecord.hasCalorimeterIn = hasCalIn;
     eventRecord.hasCalorimeterOut = hasCalOut;
     eventRecord.hasCalorimeterEnergy = hasCalOut;
-    eventRecord.transmitted = fHasTriggerHit && hasCalOut;
+    eventRecord.transmitted = false;
+    eventRecord.transmittedWeight = 0.0;
     eventRecord.initialEnergy = fInitialEnergy;
     eventRecord.upstreamCalorimeterEnergy = hasCalIn ? calIn->second.kineticEnergy : 0.0;
     eventRecord.downstreamCalorimeterEnergy = hasCalOut ? calOut->second.kineticEnergy : 0.0;
@@ -128,15 +135,28 @@ void ArtEventAction::EndOfEventAction(const G4Event*)
     eventRecord.objectIntersection = G4ThreeVector();
     eventRecord.scatteringAngle = 0.0;
     eventRecord.estimatedXOverX0 = 0.0;
+    eventRecord.objectShiftX = 0.0;
+    eventRecord.objectShiftY = 0.0;
+    eventRecord.objectTiltY = 0.0;
     eventRecord.projectionAngleY = 0.0;
+    if (fDetectorConstruction != nullptr) {
+        eventRecord.objectShiftX = fDetectorConstruction->GetArtworkShiftX();
+        eventRecord.objectShiftY = fDetectorConstruction->GetArtworkShiftY();
+        eventRecord.objectTiltY = fDetectorConstruction->GetArtworkTiltY();
+    }
 
     const auto up1 = fTrackerHits.find("TrackerUp1");
     const auto up2 = fTrackerHits.find("TrackerUp2");
     if (up1 != fTrackerHits.end() && up2 != fTrackerHits.end() && up1->second.valid && up2->second.valid) {
         eventRecord.hasIncomingTrack = true;
         eventRecord.incomingDirection = (up2->second.position - up1->second.position).unit();
-        eventRecord.objectIntersection = ArtAnalysisManager::ComputeInterceptAtZ(
+        const G4ThreeVector worldIntersection = ArtAnalysisManager::ComputeInterceptAtZ(
             up1->second.position, up2->second.position, 0.0);
+        if (fDetectorConstruction != nullptr) {
+            eventRecord.objectIntersection = fDetectorConstruction->WorldToArtworkLocal(worldIntersection);
+        } else {
+            eventRecord.objectIntersection = worldIntersection;
+        }
     }
 
     const auto down1 = fTrackerHits.find("TrackerDown1");
@@ -154,8 +174,27 @@ void ArtEventAction::EndOfEventAction(const G4Event*)
             eventRecord.scatteringAngle,
             eventRecord.initialEnergy);
     }
-    if (eventRecord.hasIncomingTrack) {
+
+    const G4double upstreamForWeight = hasCalIn ? calIn->second.kineticEnergy : eventRecord.initialEnergy;
+    if (upstreamForWeight > 0.0 && hasCalOut) {
+        eventRecord.transmittedWeight = std::clamp(
+            calOut->second.kineticEnergy / upstreamForWeight,
+            0.0,
+            1.0);
+    }
+    const G4bool withinAngularAcceptance =
+        (!eventRecord.hasIncomingTrack || !eventRecord.hasOutgoingTrack || eventRecord.scatteringAngle <= fTransmissionMaxAngle);
+    const G4bool energeticEnough = hasCalOut && calOut->second.kineticEnergy >= fTransmissionMinEnergy;
+    eventRecord.transmitted = fHasTriggerHit &&
+                              eventRecord.hasIncomingTrack &&
+                              eventRecord.hasOutgoingTrack &&
+                              energeticEnough &&
+                              withinAngularAcceptance;
+
+    if (eventRecord.hasIncomingTrack && std::abs(fProjectionAngleY) <= 1e-12) {
         eventRecord.projectionAngleY = ArtAnalysisManager::ComputeProjectionAngleY(eventRecord.incomingDirection);
+    } else {
+        eventRecord.projectionAngleY = fProjectionAngleY;
     }
 
     fAnalysisManager->AddTomographyEvent(eventRecord);
@@ -295,4 +334,9 @@ void ArtEventAction::SetFakeHitProbabilities(G4double trackerFakeProbability, G4
     fTrackerFakeProbability = ArtAnalysisManager::ClampProbability(trackerFakeProbability);
     fCalorimeterFakeProbability = ArtAnalysisManager::ClampProbability(calorimeterFakeProbability);
     fTriggerFakeProbability = ArtAnalysisManager::ClampProbability(triggerFakeProbability);
+}
+
+void ArtEventAction::SetProjectionAngleY(G4double angle)
+{
+    fProjectionAngleY = angle;
 }

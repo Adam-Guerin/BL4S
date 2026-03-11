@@ -1,0 +1,28 @@
+# Test simple - forcer l'affichage des volumes
+
+/run/verbose 1
+/run/initialize
+
+# Visualisation de base
+/vis/open OGL 800x600-0+0
+/vis/scene/create
+/vis/scene/add/volume
+
+# Style simple pour voir tous les volumes
+/vis/viewer/set/style wireframe
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector 0 0 5
+/vis/viewer/zoom 0.8
+
+# Trajectoires basiques
+/vis/scene/add/trajectories
+/tracking/storeTrajectory 1
+
+# Faisceau simple
+/gun/particle e-
+/gun/energy 100 keV
+/gun/position 0 0 -5 cm
+/gun/direction 0 0 1
+
+/control/echo "Test simple - volumes en wireframe"
+/run/beamOn 3

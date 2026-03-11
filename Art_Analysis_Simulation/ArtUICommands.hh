@@ -12,11 +12,12 @@
 class ArtAnalysisManager;
 class ArtPrimaryGeneratorAction;
 class ArtEventAction;
+class ArtDetectorConstruction;
 
 class ArtUICommands : public G4UImessenger
 {
 public:
-    ArtUICommands(ArtAnalysisManager* analysisManager, ArtPrimaryGeneratorAction* primaryGenerator, ArtEventAction* eventAction);
+    ArtUICommands(ArtAnalysisManager* analysisManager, ArtPrimaryGeneratorAction* primaryGenerator, ArtEventAction* eventAction, ArtDetectorConstruction* detectorConstruction);
     virtual ~ArtUICommands();
 
     virtual void SetNewValue(G4UIcommand* command, G4String newValue) override;
@@ -25,6 +26,7 @@ private:
     ArtAnalysisManager* fAnalysisManager;
     ArtPrimaryGeneratorAction* fPrimaryGenerator;
     ArtEventAction* fEventAction;
+    ArtDetectorConstruction* fDetectorConstruction;
 
     G4UIdirectory* fArtDirectory;
 
@@ -34,6 +36,11 @@ private:
     G4UIcmdWithADoubleAndUnit* fBeamEnergyCmd;
     G4UIcmdWithADoubleAndUnit* fBeamSigmaCmd;
     G4UIcmdWithADoubleAndUnit* fBeamTiltYCmd;
+    G4UIcmdWithADoubleAndUnit* fBeamOffsetXCmd;
+    G4UIcmdWithADoubleAndUnit* fBeamOffsetYCmd;
+    G4UIcmdWithADoubleAndUnit* fObjectShiftXCmd;
+    G4UIcmdWithADoubleAndUnit* fObjectShiftYCmd;
+    G4UIcmdWithADoubleAndUnit* fObjectTiltYCmd;
     G4UIcmdWithAnInteger* fGridCmd;
     G4UIcmdWithABool* fVerboseCmd;
     G4UIcmdWithABool* fInstrumentResponseCmd;

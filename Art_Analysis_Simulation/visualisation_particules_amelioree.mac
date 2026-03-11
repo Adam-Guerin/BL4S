@@ -1,0 +1,64 @@
+# Visualisation 3D améliorée - Particules et interactions visibles
+
+/run/verbose 1
+/event/verbose 1
+/tracking/verbose 1
+/run/initialize
+
+# Configuration graphique avancée
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume
+
+# Trajectoires avec couleurs et détails
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 500
+
+# Style visuel amélioré
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.5 0.3
+/vis/viewer/zoom 2.0
+/vis/viewer/set/lineSegmentsPerCircle 120
+
+# Configuration des trajectoires (Geant4 compatible)
+/tracking/storeTrajectory 1
+
+/vis/viewer/set/autoRefresh true
+
+# Configuration du faisceau d'électrons
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+/control/echo "=== Simulation avec particules visibles ==="
+/control/echo "Trajectoires activées - Électrons visibles"
+/control/echo ""
+
+# Lancer des événements avec pause pour voir l'action
+/run/beamOn 10
+/vis/viewer/refresh
+/control/echo "Première salve de 10 électrons lancée"
+
+/run/beamOn 10  
+/vis/viewer/refresh
+/control/echo "Deuxième salve de 10 électrons lancée"
+
+/run/beamOn 10
+/vis/viewer/refresh
+/control/echo "Troisième salve de 10 électrons lancée"
+
+/run/beamOn 20
+/vis/viewer/refresh
+/control/echo "Grande salve de 20 électrons lancée"
+
+/control/echo ""
+/control/echo "=== Simulation terminée ==="
+/control/echo "Commandes disponibles :"
+/control/echo "/run/beamOn 50 - Ajouter 50 électrons"
+/control/echo "/vis/trajectory/clear - Effacer trajectoires"
+/control/echo "/vis/viewer/zoom 1.5 - Zoomer"
+/control/echo "/vis/viewer/rotate 0 0 10 - Rotation"

@@ -1,8 +1,10 @@
 #include "ArtUICommands.hh"
 
 #include "ArtAnalysisManager.hh"
+#include "ArtDetectorConstruction.hh"
 #include "ArtEventAction.hh"
 #include "ArtPrimaryGeneratorAction.hh"
+#include "G4RunManager.hh"
 #include "G4SystemOfUnits.hh"
 
 #include <cmath>
@@ -10,11 +12,12 @@
 #include <iostream>
 #include <sstream>
 
-ArtUICommands::ArtUICommands(ArtAnalysisManager* analysisManager, ArtPrimaryGeneratorAction* primaryGenerator, ArtEventAction* eventAction)
+ArtUICommands::ArtUICommands(ArtAnalysisManager* analysisManager, ArtPrimaryGeneratorAction* primaryGenerator, ArtEventAction* eventAction, ArtDetectorConstruction* detectorConstruction)
     : G4UImessenger(),
       fAnalysisManager(analysisManager),
       fPrimaryGenerator(primaryGenerator),
       fEventAction(eventAction),
+      fDetectorConstruction(detectorConstruction),
       fConfiguredCaloStochasticTerm(0.10),
       fConfiguredCaloConstantTerm(0.01),
       fConfiguredCaloNoiseTerm(2.0 * MeV),
@@ -63,6 +66,41 @@ ArtUICommands::ArtUICommands(ArtAnalysisManager* analysisManager, ArtPrimaryGene
     fBeamTiltYCmd->SetDefaultUnit("mrad");
     fBeamTiltYCmd->SetUnitCandidates("mrad rad deg");
     fBeamTiltYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fBeamOffsetXCmd = new G4UIcmdWithADoubleAndUnit("/art/beamOffsetX", this);
+    fBeamOffsetXCmd->SetGuidance("Set beam centroid X position");
+    fBeamOffsetXCmd->SetParameterName("x", false);
+    fBeamOffsetXCmd->SetDefaultUnit("mm");
+    fBeamOffsetXCmd->SetUnitCandidates("um mm cm");
+    fBeamOffsetXCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fBeamOffsetYCmd = new G4UIcmdWithADoubleAndUnit("/art/beamOffsetY", this);
+    fBeamOffsetYCmd->SetGuidance("Set beam centroid Y position");
+    fBeamOffsetYCmd->SetParameterName("y", false);
+    fBeamOffsetYCmd->SetDefaultUnit("mm");
+    fBeamOffsetYCmd->SetUnitCandidates("um mm cm");
+    fBeamOffsetYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fObjectShiftXCmd = new G4UIcmdWithADoubleAndUnit("/art/objectShiftX", this);
+    fObjectShiftXCmd->SetGuidance("Translate artwork in X (mechanical scan surrogate)");
+    fObjectShiftXCmd->SetParameterName("x", false);
+    fObjectShiftXCmd->SetDefaultUnit("mm");
+    fObjectShiftXCmd->SetUnitCandidates("um mm cm");
+    fObjectShiftXCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fObjectShiftYCmd = new G4UIcmdWithADoubleAndUnit("/art/objectShiftY", this);
+    fObjectShiftYCmd->SetGuidance("Translate artwork in Y (mechanical scan surrogate)");
+    fObjectShiftYCmd->SetParameterName("y", false);
+    fObjectShiftYCmd->SetDefaultUnit("mm");
+    fObjectShiftYCmd->SetUnitCandidates("um mm cm");
+    fObjectShiftYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
+
+    fObjectTiltYCmd = new G4UIcmdWithADoubleAndUnit("/art/objectTiltY", this);
+    fObjectTiltYCmd->SetGuidance("Tilt artwork around X axis (Y-Z plane)");
+    fObjectTiltYCmd->SetParameterName("angle", false);
+    fObjectTiltYCmd->SetDefaultUnit("mrad");
+    fObjectTiltYCmd->SetUnitCandidates("mrad rad deg");
+    fObjectTiltYCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
 
     fGridCmd = new G4UIcmdWithAnInteger("/art/grid", this);
     fGridCmd->SetGuidance("Set square tomography grid size N (NxN)");
@@ -147,6 +185,11 @@ ArtUICommands::~ArtUICommands()
     delete fBeamEnergyCmd;
     delete fBeamSigmaCmd;
     delete fBeamTiltYCmd;
+    delete fBeamOffsetXCmd;
+    delete fBeamOffsetYCmd;
+    delete fObjectShiftXCmd;
+    delete fObjectShiftYCmd;
+    delete fObjectTiltYCmd;
     delete fGridCmd;
     delete fVerboseCmd;
     delete fInstrumentResponseCmd;
@@ -225,7 +268,63 @@ void ArtUICommands::SetNewValue(G4UIcommand* command, G4String newValue)
             const G4ThreeVector direction(0.0, std::sin(tilt), std::cos(tilt));
             fPrimaryGenerator->SetBeamDirection(direction);
         }
+        if (fEventAction != nullptr) {
+            fEventAction->SetProjectionAngleY(tilt);
+        }
         G4cout << "[art] beam tilt Y set to " << tilt / mrad << " mrad" << G4endl;
+        return;
+    }
+
+    if (command == fBeamOffsetXCmd) {
+        const G4double x = fBeamOffsetXCmd->GetNewDoubleValue(newValue);
+        if (fPrimaryGenerator != nullptr) {
+            const G4ThreeVector current = fPrimaryGenerator->GetBeamPosition();
+            fPrimaryGenerator->SetBeamPosition(G4ThreeVector(x, current.y(), current.z()));
+        }
+        G4cout << "[art] beam X offset set to " << x / mm << " mm" << G4endl;
+        return;
+    }
+
+    if (command == fBeamOffsetYCmd) {
+        const G4double y = fBeamOffsetYCmd->GetNewDoubleValue(newValue);
+        if (fPrimaryGenerator != nullptr) {
+            const G4ThreeVector current = fPrimaryGenerator->GetBeamPosition();
+            fPrimaryGenerator->SetBeamPosition(G4ThreeVector(current.x(), y, current.z()));
+        }
+        G4cout << "[art] beam Y offset set to " << y / mm << " mm" << G4endl;
+        return;
+    }
+
+    if (command == fObjectShiftXCmd) {
+        const G4double x = fObjectShiftXCmd->GetNewDoubleValue(newValue);
+        if (fDetectorConstruction != nullptr) {
+            fDetectorConstruction->SetArtworkShiftXY(x, fDetectorConstruction->GetArtworkShiftY());
+            G4RunManager::GetRunManager()->ReinitializeGeometry();
+        }
+        G4cout << "[art] object X shift set to " << x / mm << " mm" << G4endl;
+        return;
+    }
+
+    if (command == fObjectShiftYCmd) {
+        const G4double y = fObjectShiftYCmd->GetNewDoubleValue(newValue);
+        if (fDetectorConstruction != nullptr) {
+            fDetectorConstruction->SetArtworkShiftXY(fDetectorConstruction->GetArtworkShiftX(), y);
+            G4RunManager::GetRunManager()->ReinitializeGeometry();
+        }
+        G4cout << "[art] object Y shift set to " << y / mm << " mm" << G4endl;
+        return;
+    }
+
+    if (command == fObjectTiltYCmd) {
+        const G4double tilt = fObjectTiltYCmd->GetNewDoubleValue(newValue);
+        if (fDetectorConstruction != nullptr) {
+            fDetectorConstruction->SetArtworkTiltY(tilt);
+            G4RunManager::GetRunManager()->ReinitializeGeometry();
+        }
+        if (fEventAction != nullptr) {
+            fEventAction->SetProjectionAngleY(tilt);
+        }
+        G4cout << "[art] object tilt Y set to " << tilt / mrad << " mrad" << G4endl;
         return;
     }
 

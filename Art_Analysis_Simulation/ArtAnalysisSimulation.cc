@@ -62,7 +62,8 @@ int main(int argc, char** argv)
     G4RunManager* runManager = new G4RunManager();
     
     // Set mandatory initialization classes
-    runManager->SetUserInitialization(new ArtDetectorConstruction());
+    ArtDetectorConstruction* detectorConstruction = new ArtDetectorConstruction();
+    runManager->SetUserInitialization(detectorConstruction);
     runManager->SetUserInitialization(new ArtPhysicsList());
     
     // Primary generator action
@@ -70,13 +71,13 @@ int main(int argc, char** argv)
     runManager->SetUserAction(primaryGenerator);
     
     // User actions
-    ArtEventAction* eventAction = new ArtEventAction();
+    ArtEventAction* eventAction = new ArtEventAction(detectorConstruction);
     runManager->SetUserAction(eventAction);
     runManager->SetUserAction(new ArtTrackingAction(eventAction));
     runManager->SetUserAction(new ArtSteppingAction(eventAction));
     
     // UI commands for analysis (create but don't register as UserAction)
-    ArtUICommands* uiCommands = new ArtUICommands(ArtAnalysisManager::Instance(), primaryGenerator, eventAction);
+    ArtUICommands* uiCommands = new ArtUICommands(ArtAnalysisManager::Instance(), primaryGenerator, eventAction, detectorConstruction);
     (void)uiCommands;
     
     // Initialize visualization in all modes so macros with /vis commands work.

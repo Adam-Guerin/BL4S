@@ -5,6 +5,8 @@
 #include "ArtAnalysisManager.hh"
 #include <map>
 
+class ArtDetectorConstruction;
+
 struct DetectorHit {
     G4bool valid = false;
     G4ThreeVector position = G4ThreeVector();
@@ -16,7 +18,7 @@ struct DetectorHit {
 class ArtEventAction : public G4UserEventAction
 {
 public:
-    ArtEventAction();
+    explicit ArtEventAction(ArtDetectorConstruction* detectorConstruction);
     virtual ~ArtEventAction();
 
     virtual void BeginOfEventAction(const G4Event* event) override;
@@ -41,9 +43,11 @@ public:
     void SetTriggerEfficiency(G4double efficiency);
     void SetCalorimeterEfficiency(G4double efficiency);
     void SetFakeHitProbabilities(G4double trackerFakeProbability, G4double calorimeterFakeProbability, G4double triggerFakeProbability);
+    void SetProjectionAngleY(G4double angle);
 
 private:
     ArtAnalysisManager* fAnalysisManager;
+    ArtDetectorConstruction* fDetectorConstruction;
     ElectronTrack fCurrentTrack;
     G4bool fTrackStarted;
 
@@ -63,6 +67,9 @@ private:
     G4double fTrackerFakeProbability;
     G4double fCalorimeterFakeProbability;
     G4double fTriggerFakeProbability;
+    G4double fTransmissionMinEnergy;
+    G4double fTransmissionMaxAngle;
+    G4double fProjectionAngleY;
     std::map<G4String, DetectorHit> fTrackerHits;
     std::map<G4String, DetectorHit> fCalorimeterHits;
 };

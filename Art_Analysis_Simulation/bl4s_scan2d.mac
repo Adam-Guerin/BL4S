@@ -1,0 +1,77 @@
+# BL4S-oriented 2D + angular scan
+# Combines object translations and angular projections.
+
+/control/verbose 2
+/tracking/verbose 0
+/event/verbose 0
+/run/verbose 1
+/run/initialize
+
+/art/beamEnergy 2 GeV
+/art/beamSigma 1 mm
+/art/grid 32
+/art/instrumentResponse true
+/art/trackerResolution 50 um
+/art/caloResolution 0.10 0.01
+/art/caloNoise 2 MeV
+/art/triggerEfficiency 0.995
+/art/trackerEfficiency 0.98
+/art/caloEfficiency 0.99
+/art/triggerFakeProb 0.0005
+/art/trackerFakeProb 0.002
+/art/caloFakeProb 0.001
+
+# Central scan point
+/art/objectShiftX 0 mm
+/art/objectShiftY 0 mm
+/art/objectTiltY -8 mrad
+/run/beamOn 1000
+/art/objectTiltY 0 mrad
+/run/beamOn 1400
+/art/objectTiltY 8 mrad
+/run/beamOn 1000
+
+# Left scan point
+/art/objectShiftX -4 mm
+/art/objectShiftY 0 mm
+/art/objectTiltY -8 mrad
+/run/beamOn 900
+/art/objectTiltY 0 mrad
+/run/beamOn 1200
+/art/objectTiltY 8 mrad
+/run/beamOn 900
+
+# Right scan point
+/art/objectShiftX 4 mm
+/art/objectShiftY 0 mm
+/art/objectTiltY -8 mrad
+/run/beamOn 900
+/art/objectTiltY 0 mrad
+/run/beamOn 1200
+/art/objectTiltY 8 mrad
+/run/beamOn 900
+
+# Upper scan point
+/art/objectShiftX 0 mm
+/art/objectShiftY 4 mm
+/art/objectTiltY -8 mrad
+/run/beamOn 900
+/art/objectTiltY 0 mrad
+/run/beamOn 1200
+/art/objectTiltY 8 mrad
+/run/beamOn 900
+
+# Lower scan point
+/art/objectShiftX 0 mm
+/art/objectShiftY -4 mm
+/art/objectTiltY -8 mrad
+/run/beamOn 900
+/art/objectTiltY 0 mrad
+/run/beamOn 1200
+/art/objectTiltY 8 mrad
+/run/beamOn 900
+
+/control/echo "=== Final analysis ==="
+/art/analyze
+/art/save bl4s_scan2d_results.csv
+/art/report console

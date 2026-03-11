@@ -74,6 +74,8 @@ void ArtAnalysisManager::ConfigureGrid(G4int nX, G4int nY, G4double halfWidth, G
     fCellScatteringSum.assign(nCells, 0.0);
     fCellEnergyLossSum.assign(nCells, 0.0);
     fCellThicknessSum.assign(nCells, 0.0);
+    fCellIncidentEnergySum.assign(nCells, 0.0);
+    fCellTransmittedEnergySum.assign(nCells, 0.0);
 }
 
 void ArtAnalysisManager::AddTomographyEvent(const TomographyEvent& eventRecord)
@@ -126,8 +128,10 @@ void ArtAnalysisManager::AddTomographyEvent(const TomographyEvent& eventRecord)
     fCellEnergyLossSum[index] += enriched.energyLoss;
     fCellThicknessSum[index] += enriched.estimatedThickness;
     fCellIncidentCounts[index] += 1;
+    fCellIncidentEnergySum[index] += std::max(0.0, enriched.initialEnergy);
     if (enriched.transmitted) {
         fCellTransmittedCounts[index] += 1;
+        fCellTransmittedEnergySum[index] += std::max(0.0, enriched.downstreamCalorimeterEnergy);
     }
 }
 
@@ -231,7 +235,7 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
     }
 
     summaryFile << "# BFS-ready summary\n";
-    summaryFile << "event_id,has_trigger,has_cal_in,has_cal_out,valid_tomography,transmitted,projection_angle_y_mrad,theta_mrad,x_over_X0_est,thickness_est_mm,X0_est_mm,dedx_est_MeV_per_mm,mu_est_per_mm,transmission_est,inferred_material,initial_energy_MeV,cal_in_energy_MeV,cal_out_energy_MeV,final_energy_MeV,deltaE_MeV,obj_x_mm,obj_y_mm,in_ux,in_uy,in_uz,out_ux,out_uy,out_uz\n";
+    summaryFile << "event_id,has_trigger,has_cal_in,has_cal_out,valid_tomography,transmitted,transmitted_weight,projection_angle_y_mrad,object_shift_x_mm,object_shift_y_mm,object_tilt_y_mrad,theta_mrad,x_over_X0_est,thickness_est_mm,X0_est_mm,dedx_est_MeV_per_mm,mu_est_per_mm,transmission_est,inferred_material,initial_energy_MeV,cal_in_energy_MeV,cal_out_energy_MeV,final_energy_MeV,deltaE_MeV,obj_x_mm,obj_y_mm,in_ux,in_uy,in_uz,out_ux,out_uy,out_uz\n";
     for (const auto& eventRecord : fTomographyEvents) {
         const bool valid = eventRecord.hasIncomingTrack && eventRecord.hasOutgoingTrack && eventRecord.hasCalorimeterEnergy;
         summaryFile << eventRecord.eventID << ","
@@ -240,7 +244,11 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
                     << (eventRecord.hasCalorimeterOut ? 1 : 0) << ","
                     << (valid ? 1 : 0) << ","
                     << (eventRecord.transmitted ? 1 : 0) << ","
+                    << eventRecord.transmittedWeight << ","
                     << eventRecord.projectionAngleY / mrad << ","
+                    << eventRecord.objectShiftX / mm << ","
+                    << eventRecord.objectShiftY / mm << ","
+                    << eventRecord.objectTiltY / mrad << ","
                     << eventRecord.scatteringAngle / mrad << ","
                     << eventRecord.estimatedXOverX0 << ","
                     << eventRecord.estimatedThickness / mm << ","
@@ -265,7 +273,7 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
                     << "\n";
     }
 
-    summaryFile << "\n# grid_cell,ix,iy,count,mean_theta_mrad,mean_deltaE_MeV,mean_thickness_mm,transmission,mu_est_per_mm\n";
+    summaryFile << "\n# grid_cell,ix,iy,count,mean_theta_mrad,mean_deltaE_MeV,mean_thickness_mm,transmission,transmission_energy,mu_est_per_mm\n";
     for (G4int iy = 0; iy < fGridNY; ++iy) {
         for (G4int ix = 0; ix < fGridNX; ++ix) {
             const G4int linear = iy * fGridNX + ix;
@@ -275,6 +283,9 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
             const G4double meanDeltaE = (count > 0) ? fCellEnergyLossSum[index] / count : 0.0;
             const G4double meanThickness = (count > 0) ? fCellThicknessSum[index] / count : 0.0;
             const G4double transmission = ComputeTransmission(fCellIncidentCounts[index], fCellTransmittedCounts[index]);
+            const G4double transmissionEnergy = (fCellIncidentEnergySum[index] > 0.0)
+                ? std::clamp(fCellTransmittedEnergySum[index] / fCellIncidentEnergySum[index], 0.0, 1.0)
+                : 0.0;
             const G4double mu = EstimateLinearAttenuationFromTransmission(transmission, meanThickness);
             summaryFile << linear << ","
                         << ix << ","
@@ -284,6 +295,7 @@ void ArtAnalysisManager::SaveResults(const G4String& filename)
                         << meanDeltaE / MeV << ","
                         << meanThickness / mm << ","
                         << transmission << ","
+                        << transmissionEnergy << ","
                         << mu / (1.0 / mm)
                         << "\n";
         }

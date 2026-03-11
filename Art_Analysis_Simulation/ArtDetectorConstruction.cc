@@ -6,12 +6,17 @@
 #include "G4SystemOfUnits.hh"
 #include "G4Colour.hh"
 #include "G4VisAttributes.hh"
+#include "G4RotationMatrix.hh"
+
+#include <cmath>
+#include <map>
 
 ArtDetectorConstruction::ArtDetectorConstruction()
 : G4VUserDetectorConstruction(),
   fWorldPhysical(nullptr),
   fWorldLogical(nullptr),
   fArtworkLogical(nullptr),
+  fArtworkPhysical(nullptr),
   fTracker1Logical(nullptr),
   fTracker2Logical(nullptr),
   fTriggerLogical(nullptr),
@@ -19,7 +24,10 @@ ArtDetectorConstruction::ArtDetectorConstruction()
   fCalorimeter2Logical(nullptr),
   fArtworkWidth(20*cm),
   fArtworkHeight(20*cm),
-  fArtworkDepth(2*mm)
+  fArtworkDepth(2*mm),
+  fArtworkShiftX(0.0),
+  fArtworkShiftY(0.0),
+  fArtworkTiltY(0.0)
 {
     DefineMaterials();
 }
@@ -72,6 +80,10 @@ void ArtDetectorConstruction::DefineMaterials()
     // Silicium pour détecteurs
     fSiliconMaterial = nist->FindOrBuildMaterial("G4_Si");
     fScintillatorMaterial = nist->FindOrBuildMaterial("G4_PLASTIC_SC_VINYLTOLUENE");
+    fEcalMaterial = nist->FindOrBuildMaterial("G4_PbWO4");
+    if (fEcalMaterial == nullptr) {
+        fEcalMaterial = nist->FindOrBuildMaterial("G4_BGO");
+    }
     
     // Vermillon (HgS) - pigment rouge historique très dense
     fVermilionMaterial = new G4Material("Vermilion", 8.1*g/cm3, 2);
@@ -153,8 +165,27 @@ void ArtDetectorConstruction::ConstructArtwork()
         totalThickness += layer.thickness;
     }
     
-    // Create artwork as stacked layers
+    fArtworkDepth = totalThickness;
+
+    // Envelope that can be moved/tilted to emulate mechanical scans
+    G4Box* solidArtwork = new G4Box("ArtworkEnvelope", fArtworkWidth / 2, fArtworkHeight / 2, totalThickness / 2);
+    fArtworkLogical = new G4LogicalVolume(solidArtwork, fAirMaterial, "ArtworkEnvelope");
+
+    G4RotationMatrix* artworkRotation = new G4RotationMatrix();
+    artworkRotation->rotateX(fArtworkTiltY);
+    fArtworkPhysical = new G4PVPlacement(
+        artworkRotation,
+        G4ThreeVector(fArtworkShiftX, fArtworkShiftY, 0.0),
+        fArtworkLogical,
+        "ArtworkEnvelope",
+        fWorldLogical,
+        false,
+        0,
+        true);
+
+    // Create artwork as stacked layers inside the envelope
     G4double currentZ = -totalThickness/2;
+    std::map<G4String, G4LogicalVolume*> layerLogicalByName;
     
     for (size_t i = 0; i < fPaintLayers.size(); ++i) {
         const auto& layer = fPaintLayers[i];
@@ -180,7 +211,7 @@ void ArtDetectorConstruction::ConstructArtwork()
             position,
             logicalLayer,
             layer.name,
-            fWorldLogical,
+            fArtworkLogical,
             false,
             static_cast<G4int>(i),
             true
@@ -208,9 +239,73 @@ void ArtDetectorConstruction::ConstructArtwork()
         visAtt->SetVisibility(true);
         visAtt->SetForceSolid(true);
         logicalLayer->SetVisAttributes(visAtt);
+        layerLogicalByName[layer.name] = logicalLayer;
         
         currentZ += layer.thickness;
     }
+
+    // Non-uniform lateral structures: hidden inclusions with different materials.
+    auto placeInclusion = [&](const G4String& name,
+                              const G4String& layerName,
+                              G4Material* material,
+                              G4double sizeX,
+                              G4double sizeY,
+                              G4double sizeZ,
+                              const G4ThreeVector& pos,
+                              const G4Colour& color) {
+        auto it = layerLogicalByName.find(layerName);
+        if (it == layerLogicalByName.end() || material == nullptr) {
+            return;
+        }
+        G4Box* solid = new G4Box(name + "Solid", sizeX / 2.0, sizeY / 2.0, sizeZ / 2.0);
+        G4LogicalVolume* logical = new G4LogicalVolume(solid, material, name);
+        new G4PVPlacement(
+            0,
+            pos,
+            logical,
+            name,
+            it->second,
+            false,
+            0,
+            true);
+        G4VisAttributes* visAtt = new G4VisAttributes(color);
+        visAtt->SetVisibility(true);
+        visAtt->SetForceSolid(true);
+        logical->SetVisAttributes(visAtt);
+    };
+
+    placeInclusion(
+        "HiddenVermilionPatch",
+        "LeadWhite",
+        fVermilionMaterial,
+        3.5 * cm,
+        2.0 * cm,
+        120 * micrometer,
+        G4ThreeVector(-3.0 * cm, 2.5 * cm, 0.0),
+        G4Colour(0.95, 0.2, 0.2));
+    placeInclusion(
+        "HiddenLeadStripe",
+        "Gesso",
+        fLeadTinYellowMaterial,
+        7.0 * cm,
+        0.9 * cm,
+        220 * micrometer,
+        G4ThreeVector(2.8 * cm, -2.0 * cm, 0.0),
+        G4Colour(0.9, 0.75, 0.2));
+    placeInclusion(
+        "RestorationWindow",
+        "LapisLazuli",
+        fModernPaintMaterial,
+        2.8 * cm,
+        2.8 * cm,
+        100 * micrometer,
+        G4ThreeVector(1.0 * cm, 3.5 * cm, 0.0),
+        G4Colour(0.55, 0.35, 0.2));
+
+    G4VisAttributes* artworkVis = new G4VisAttributes(G4Colour(1.0, 1.0, 1.0, 0.08));
+    artworkVis->SetVisibility(true);
+    artworkVis->SetForceWireframe(true);
+    fArtworkLogical->SetVisAttributes(artworkVis);
 }
 
 void ArtDetectorConstruction::ConstructDetectors()
@@ -243,9 +338,9 @@ void ArtDetectorConstruction::ConstructDetectors()
     fCalorimeter1Logical = new G4LogicalVolume(solidCalorimeterIn, fSiliconMaterial, "CalorimeterIn");
     new G4PVPlacement(0, G4ThreeVector(0, 0, -10*cm), fCalorimeter1Logical, "CalorimeterIn", fWorldLogical, false, 0, true);
 
-    // Downstream calorimeter for outgoing-energy measurement
-    G4Box* solidCalorimeterOut = new G4Box("CalorimeterOut", 12*cm, 12*cm, 2*cm);
-    fCalorimeter2Logical = new G4LogicalVolume(solidCalorimeterOut, fSiliconMaterial, "CalorimeterOut");
+    // Dense ECAL-like block for outgoing-energy measurement
+    G4Box* solidCalorimeterOut = new G4Box("CalorimeterOut", 12*cm, 12*cm, 5*cm);
+    fCalorimeter2Logical = new G4LogicalVolume(solidCalorimeterOut, fEcalMaterial, "CalorimeterOut");
     new G4PVPlacement(0, G4ThreeVector(0, 0, 40*cm), fCalorimeter2Logical, "CalorimeterOut", fWorldLogical, false, 0, true);
     
     // Visualization for detectors
@@ -273,4 +368,28 @@ G4VPhysicalVolume* ArtDetectorConstruction::Construct()
     ConstructDetectors();
     
     return fWorldPhysical;
+}
+
+void ArtDetectorConstruction::SetArtworkShiftXY(G4double x, G4double y)
+{
+    fArtworkShiftX = x;
+    fArtworkShiftY = y;
+}
+
+void ArtDetectorConstruction::SetArtworkTiltY(G4double angle)
+{
+    fArtworkTiltY = angle;
+}
+
+G4ThreeVector ArtDetectorConstruction::WorldToArtworkLocal(const G4ThreeVector& worldPoint) const
+{
+    // Inverse transform of envelope placement:
+    // world = R_x(tilt) * local + shift.
+    const G4ThreeVector shifted = worldPoint - G4ThreeVector(fArtworkShiftX, fArtworkShiftY, 0.0);
+    const G4double c = std::cos(fArtworkTiltY);
+    const G4double s = std::sin(fArtworkTiltY);
+    return G4ThreeVector(
+        shifted.x(),
+        c * shifted.y() + s * shifted.z(),
+        -s * shifted.y() + c * shifted.z());
 }

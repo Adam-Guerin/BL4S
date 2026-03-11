@@ -21,32 +21,32 @@
 /art/trackerFakeProb 0.002
 /art/caloFakeProb 0.001
 
-/control/echo "=== Projection -12 mrad ==="
-/art/beamTiltY -12 mrad
+/control/echo "=== Projection -12 mrad (object tilt) ==="
+/art/objectTiltY -12 mrad
 /run/beamOn 1500
 
-/control/echo "=== Projection -8 mrad ==="
-/art/beamTiltY -8 mrad
+/control/echo "=== Projection -8 mrad (object tilt) ==="
+/art/objectTiltY -8 mrad
 /run/beamOn 1500
 
-/control/echo "=== Projection -4 mrad ==="
-/art/beamTiltY -4 mrad
+/control/echo "=== Projection -4 mrad (object tilt) ==="
+/art/objectTiltY -4 mrad
 /run/beamOn 1500
 
-/control/echo "=== Projection 0 mrad ==="
-/art/beamTiltY 0 mrad
+/control/echo "=== Projection 0 mrad (object tilt) ==="
+/art/objectTiltY 0 mrad
 /run/beamOn 2000
 
-/control/echo "=== Projection +4 mrad ==="
-/art/beamTiltY 4 mrad
+/control/echo "=== Projection +4 mrad (object tilt) ==="
+/art/objectTiltY 4 mrad
 /run/beamOn 1500
 
-/control/echo "=== Projection +8 mrad ==="
-/art/beamTiltY 8 mrad
+/control/echo "=== Projection +8 mrad (object tilt) ==="
+/art/objectTiltY 8 mrad
 /run/beamOn 1500
 
-/control/echo "=== Projection +12 mrad ==="
-/art/beamTiltY 12 mrad
+/control/echo "=== Projection +12 mrad (object tilt) ==="
+/art/objectTiltY 12 mrad
 /run/beamOn 1500
 
 /control/echo "=== Final analysis ==="

@@ -1,0 +1,62 @@
+# Visualisation complète avec détails de l'œuvre d'art
+
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration graphique complète
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 100
+
+# Améliorer l'affichage des volumes
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.5 0.3
+/vis/viewer/zoom 3.0
+/vis/viewer/set/lineSegmentsPerCircle 120
+
+# Configuration des trajectoires
+/tracking/storeTrajectory 1
+
+/vis/viewer/set/autoRefresh true
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+/control/echo "=== Visualisation complète de l'œuvre d'art ==="
+/control/echo "Couche de peinture, détecteurs et trajectoires"
+/control/echo ""
+
+# Lancer quelques particules pour voir les interactions
+/run/beamOn 5
+/vis/viewer/refresh
+/control/echo "5 électrons lancés - Observez les couches de peinture"
+
+/run/beamOn 5
+/vis/viewer/refresh  
+/control/echo "5 électrons supplémentaires"
+
+/run/beamOn 10
+/vis/viewer/refresh
+/control/echo "10 électrons - Voir les interactions dans l'œuvre"
+
+/control/echo ""
+/control/echo "=== Utilisez la souris pour : ==="
+/control/echo "- Rotation: clic gauche + glissement"
+/control/echo "- Zoom: clic droit + glissement ou molette"
+/control/echo "- Pan: Ctrl + clic droit + glissement"
+/control/echo ""
+/control/echo "=== Commandes interactives : ==="
+/control/echo "/run/beamOn 20 - Ajouter 20 électrons"
+/control/echo "/vis/trajectory/clear - Effacer trajectoires"
+/control/echo "/vis/viewer/zoom 2.0 - Changer le zoom"
+/control/echo "/vis/viewer/set/style wireframe - Mode fil de fer"

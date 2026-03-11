@@ -1,0 +1,43 @@
+# Visualisation de l'œuvre AVEC trajectoires (progressif)
+
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration graphique originale qui fonctionne
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume
+
+# Style original qui montre l'œuvre
+/vis/viewer/set/style wireframe
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.35 0.2
+/vis/viewer/zoom 1.4
+/vis/viewer/set/lineSegmentsPerCircle 120
+
+# AJOUT progressif des trajectoires
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 50
+/tracking/storeTrajectory 1
+
+/vis/viewer/set/autoRefresh true
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+/control/echo "=== Œuvre + Trajectoires (test) ==="
+/control/echo "Si l'œuvre disparaît, le problème vient des trajectoires"
+/control/echo ""
+
+# Test avec quelques particules
+/run/beamOn 10
+
+/control/echo ""
+/control/echo "Est-ce que vous voyez toujours l'œuvre ET les trajectoires ?"

@@ -55,6 +55,10 @@ struct TomographyEvent {
     G4double estimatedStoppingPower;
     G4double estimatedMu;
     G4double estimatedTransmission;
+    G4double transmittedWeight;
+    G4double objectShiftX;
+    G4double objectShiftY;
+    G4double objectTiltY;
     G4String inferredMaterial;
     G4double projectionAngleY;
 };
@@ -128,6 +132,8 @@ private:
     std::vector<G4double> fCellScatteringSum;
     std::vector<G4double> fCellEnergyLossSum;
     std::vector<G4double> fCellThicknessSum;
+    std::vector<G4double> fCellIncidentEnergySum;
+    std::vector<G4double> fCellTransmittedEnergySum;
     
     // Analysis methods
     G4double CalculateMean(const std::vector<G4double>& values);

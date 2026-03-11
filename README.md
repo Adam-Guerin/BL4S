@@ -13,6 +13,7 @@ Le setup simulé est:
 
 L'objet contient des couches type peinture/restauration:
 `Varnish, ModernPaint, Vermilion, LapisLazuli, LeadWhite, Malachite, LeadTinYellow, Gesso, Canvas`.
+Des inclusions latérales cachées (patch/stripe/window) sont aussi placées dans certaines couches pour créer une vraie structure 2D non uniforme.
 
 Le faisceau primaire est un faisceau d'électrons (`e-`) avec énergie configurable (2 GeV dans les macros BL4S).
 
@@ -57,14 +58,21 @@ cmake --build build_simple --config Release --target ArtAnalysisSimulation
 ## 5. Macros utiles
 
 - `bl4s_ready.mac`: acquisition BL4S de base + export CSV.
-- `bl4s_multiangle.mac`: acquisitions multi-angles pour reconstruction.
+- `bl4s_multiangle.mac`: acquisitions multi-angles pour reconstruction (tilt mécanique de l'objet via `/art/objectTiltY`).
+- `bl4s_scan2d.mac`: scan 2D (translations objet) + multi-angles.
 - `animation_particles.mac`: visualisation trajectoires simple/stable.
 - `advanced_visualization.mac`: visualisation avancée alignée avec la géométrie actuelle.
+
+Commandes scan utiles:
+- `/art/objectShiftX`, `/art/objectShiftY`: translation de l'objet (reconstruction multi-position).
+- `/art/objectTiltY`: inclinaison de l'objet (reconstruction multi-angle).
+- `/art/beamOffsetX`, `/art/beamOffsetY`: balayage raster du faisceau.
 
 ## 6. Sorties d'analyse
 
 La commande `/art/save <file>.csv` exporte:
 - observables événement (`theta`, `deltaE`, directions, intersection objet),
+- `obj_x_mm`, `obj_y_mm` sont maintenant exportés en repère local objet (cohérent avec `objectShiftX/Y` et `objectTiltY`),
 - estimations physiques ajoutées:
   - `x_over_X0_est`
   - `thickness_est_mm`
@@ -74,6 +82,7 @@ La commande `/art/save <file>.csv` exporte:
   - `transmission_est`
   - `inferred_material`
 - résumé par cellule de grille (`mean_theta`, `mean_deltaE`, `mean_thickness`, `transmission`, `mu`).
+- métriques de transmission enrichies: `transmitted_weight` (niveau événement) et `transmission_energy` (niveau cellule).
 
 ## 7. Reconstruction multi-angle
 

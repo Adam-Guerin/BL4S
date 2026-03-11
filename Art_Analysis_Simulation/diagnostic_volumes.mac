@@ -1,0 +1,51 @@
+# Macro de diagnostic pour vérifier les volumes
+
+/run/verbose 2
+/event/verbose 1
+/tracking/verbose 1
+/run/initialize
+
+# Ouvrir la visualisation
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+
+# Créer la scène
+/vis/scene/create
+/vis/scene/add/volume
+
+# Forcer l'affichage de TOUS les volumes
+/vis/drawVolume
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 1 1
+/vis/viewer/zoom 1.0
+
+# Activer les trajectoires
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 50
+/tracking/storeTrajectory 1
+
+/vis/viewer/set/autoRefresh true
+
+# Afficher la liste des volumes
+/control/echo "=== Liste des volumes dans la scène ==="
+/vis/scene/list
+
+/control/echo ""
+/control/echo "=== Configuration du faisceau ==="
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -10 cm
+/gun/direction 0 0 1
+
+/control/echo ""
+/control/echo "=== Lancement de 5 électrons pour test ==="
+/run/beamOn 5
+
+/control/echo ""
+/control/echo "=== Commandes de diagnostic ==="
+/control/echo "/vis/viewer/set/style wireframe - Mode fil de fer"
+/control/echo "/vis/viewer/set/style surface - Mode surface"
+/control/echo "/vis/viewer/zoom 2.0 - Zoomer"
+/control/echo "/vis/viewer/pan 10 0 - Déplacer"
+/control/echo "/vis/scene/list - Liste des volumes"

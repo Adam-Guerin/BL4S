@@ -1,0 +1,48 @@
+# Visualisation corrigée - résolution du problème de scène
+
+/run/verbose 1
+/run/initialize
+
+# Ouvrir le système graphique D'ABORD
+/vis/open OGL 1280x820-0+0
+
+# Créer la scène APRÈS l'ouverture
+/vis/scene/create
+
+# Dessiner les volumes dans la scène
+/vis/drawVolume
+
+# Ajouter les volumes à la scène
+/vis/scene/add/volume
+
+# Configuration du visualiseur
+/vis/viewer/set/style surface
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.5 0.3
+/vis/viewer/zoom 2.0
+
+# Trajectoires
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 100
+/tracking/storeTrajectory 1
+
+# Forcer le rafraîchissement
+/vis/viewer/set/autoRefresh true
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -15 cm
+/gun/direction 0 0 1
+
+/control/echo "=== Visualisation corrigée ==="
+/control/echo "Matériaux détectés: Varnish, ModernPaint, Vermilion, LapisLazuli, etc."
+/control/echo ""
+
+# Lancer des particules
+/run/beamOn 10
+/vis/viewer/refresh
+
+/control/echo ""
+/control/echo "=== Test réussi ? ==="
+/control/echo "Vous devriez voir l'œuvre d'art avec ses couches colorées"

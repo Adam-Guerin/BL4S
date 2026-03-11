@@ -5,6 +5,7 @@
 #include "G4LogicalVolume.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4Material.hh"
+#include "G4ThreeVector.hh"
 
 class ArtDetectorConstruction : public G4VUserDetectorConstruction
 {
@@ -13,6 +14,12 @@ public:
     virtual ~ArtDetectorConstruction();
     
     virtual G4VPhysicalVolume* Construct() override;
+    void SetArtworkShiftXY(G4double x, G4double y);
+    void SetArtworkTiltY(G4double angle);
+    G4double GetArtworkShiftX() const { return fArtworkShiftX; }
+    G4double GetArtworkShiftY() const { return fArtworkShiftY; }
+    G4double GetArtworkTiltY() const { return fArtworkTiltY; }
+    G4ThreeVector WorldToArtworkLocal(const G4ThreeVector& worldPoint) const;
     
 private:
     // Materials
@@ -29,11 +36,13 @@ private:
     G4Material* fMalachiteMaterial;      // Malachite (Cu2CO3(OH)2) - pigment historique
     G4Material* fLeadTinYellowMaterial;  // Jaune de plomb-étain (Pb2SnO4) - pigment historique
     G4Material* fScintillatorMaterial;   // Trigger scintillator
+    G4Material* fEcalMaterial;           // Dense EM calorimeter
     
     // Geometry
     G4VPhysicalVolume* fWorldPhysical;
     G4LogicalVolume* fWorldLogical;
     G4LogicalVolume* fArtworkLogical;
+    G4VPhysicalVolume* fArtworkPhysical;
     G4LogicalVolume* fTracker1Logical;
     G4LogicalVolume* fTracker2Logical;
     G4LogicalVolume* fTriggerLogical;
@@ -44,6 +53,9 @@ private:
     G4double fArtworkWidth;
     G4double fArtworkHeight;
     G4double fArtworkDepth;
+    G4double fArtworkShiftX;
+    G4double fArtworkShiftY;
+    G4double fArtworkTiltY;
     
     // Layer structure
     struct PaintLayer {
