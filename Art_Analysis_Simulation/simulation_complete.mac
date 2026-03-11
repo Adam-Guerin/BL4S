@@ -1,0 +1,45 @@
+# Simulation complète avec génération de données CSV
+
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration graphique pour visualisation
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume
+
+# Style qui montre l'œuvre
+/vis/viewer/set/style wireframe
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.35 0.2
+/vis/viewer/zoom 1.4
+/vis/viewer/set/lineSegmentsPerCircle 120
+
+# Trajectoires pour analyse
+/tracking/storeTrajectory 1
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 1000
+
+/vis/viewer/set/autoRefresh true
+
+# Configuration du faisceau
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+/control/echo "=== SIMULATION COMPLETE POUR ANALYSE ==="
+/control/echo "Génération de 1000 électrons pour analyse statistique"
+/control/echo ""
+
+# Lancer un grand nombre de particules pour avoir des données statistiques
+/run/beamOn 1000
+
+/control/echo ""
+/control/echo "=== Simulation terminée ==="
+/control/echo "Les données sont enregistrées dans les fichiers de sortie"
+/control/echo "Lancez maintenant: python generate_report.py"

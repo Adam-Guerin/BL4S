@@ -1,0 +1,52 @@
+# Simulation complète avec sortie CSV des données
+
+/run/verbose 1
+/event/verbose 0
+/tracking/verbose 0
+/run/initialize
+
+# Configuration pour sortie des données
+/histo/filename "artwork_analysis_data"
+/histo1/set 1 100 0 100  # Énergie des électrons
+/histo2/set 1 50 0 50    # Angle de diffusion
+/histo3/set 1 20 0 20    # Profondeur de pénétration
+
+# Configuration graphique
+/vis/open OGL 1280x820-0+0
+/vis/viewer/set/autoRefresh false
+/vis/drawVolume
+/vis/scene/create
+/vis/scene/add/volume
+
+/vis/viewer/set/style wireframe
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/viewpointVector -1 0.35 0.2
+/vis/viewer/zoom 1.4
+
+# Trajectoires
+/tracking/storeTrajectory 1
+/vis/scene/add/trajectories smooth
+/vis/scene/endOfEventAction accumulate 1000
+
+/vis/viewer/set/autoRefresh true
+
+# Faisceau
+/gun/particle e-
+/gun/energy 120 keV
+/gun/position 0 0 -20 cm
+/gun/direction 0 0 1
+
+/control/echo "=== SIMULATION COMPLETE AVEC DONNÉES CSV ==="
+/control/echo "1000 électrons pour analyse statistique complète"
+/control/echo ""
+
+# Lancer la simulation
+/run/beamOn 1000
+
+/control/echo ""
+/control/echo "=== SAUVEGARDE DES DONNÉES ==="
+/histo/write
+/control/echo "Données sauvegardées dans artwork_analysis_data.csv"
+
+/control/echo ""
+/control/echo "=== Génération des rapports Python ==="
